@@ -9,6 +9,8 @@ public abstract class Character {
     protected int level;
     protected int hp;
     protected int maxHp;
+    protected int row;
+    protected int col;
 
     public Character(String name, int level, int hp) {
         this.name = name;
@@ -46,4 +48,11 @@ public abstract class Character {
     }
 
     public abstract void displayStats();
+
+    public int getRow() { return row; }
+    public int getCol() { return col; }
+    public void setPosition(int row, int col) {
+        this.row = row;
+        this.col = col;
+    }
 }
