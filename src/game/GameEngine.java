@@ -36,7 +36,7 @@ public class GameEngine {
     public void start() {
         displayWelcome();
         setupParty();
-        world = new World();
+        world = new MHWorld();
 
         System.out.println("\nYour epic journey begins!");
         System.out.println("May fortune favor the bold...\n");
@@ -160,7 +160,7 @@ public class GameEngine {
      * Move the party and handle tile events.
      */
     private void moveParty(int deltaRow, int deltaCol) {
-        if (world.moveParty(deltaRow, deltaCol)) {
+        if (world.moveHero(null, deltaRow, deltaCol)) {
             handleTileEvent();
         }
     }
