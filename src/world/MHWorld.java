@@ -13,6 +13,7 @@ public class MHWorld extends World {
     public MHWorld(int size) {
         super(size);
         this.setMovementStrategy(new MHMovementStrategy());
+        placeParty();
     }
 
     @Override
@@ -29,7 +30,7 @@ public class MHWorld extends World {
         placeTiles(TileType.MARKET, market);
     }
 
-    private void placeTiles(TileType type, int count) {
+    protected void placeTiles(TileType type, int count) {
         int placed = 0;
         while (placed < count) {
             int r = random.nextInt(size);

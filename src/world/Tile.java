@@ -76,6 +76,8 @@ public class Tile {
                 return "C";
             case KOULOU:
                 return "K";
+            case PLAIN:
+                return "P";
             case COMMON:
             default:
                 return ".";
