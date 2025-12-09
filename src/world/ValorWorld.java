@@ -23,9 +23,10 @@ public class ValorWorld extends World{
 
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
-                // Example: create two-wide lanes
                 if (c == 2 || c == 5)
                     grid[r][c] = new Tile(TileType.INACCESSIBLE);
+                else if (r == 0 || r == size - 1)
+                    grid[r][c] = new Tile(TileType.NEXUS);
                 else
                     grid[r][c] = new Tile(TileType.PLAIN);
             }
@@ -46,6 +47,53 @@ public class ValorWorld extends World{
                 grid[r][c] = new Tile(type);
                 placed++;
             }
+        }
+    }
+
+    @Override
+    public void display() {
+        for (int r = 0; r < size; r++) {
+            // Top of tile box
+            System.out.print(" ");
+            for (int c = 0; c < size; c++) {
+                String s = grid[r][c].getSymbol();
+                System.out.printf(" %s - %s - %s ", s, s, s);
+            }
+            System.out.println();
+
+            // Middle of tile box
+            System.out.print(" ");
+            for  (int c = 0; c < size; c++) {
+                Tile tile = grid[r][c];
+                System.out.print(" | ");
+
+                if (tile.getType() == TileType.INACCESSIBLE) {
+                    System.out.print("X X X | ");
+                    continue;
+                }
+
+                if (tile.hasHero()) {
+                    System.out.print("H1 ");
+                } else {
+                    System.out.print("   ");
+                }
+
+                if (tile.hasMonster()) {
+                    System.out.print("M1 ");
+                } else {
+                    System.out.print("   ");
+                }
+                System.out.print("| ");
+            }
+            System.out.println();
+
+            // Bottom of tile box
+            System.out.print(" ");
+            for (int c = 0; c < size; c++) {
+                String s = grid[r][c].getSymbol();
+                System.out.printf(" %s - %s - %s ", s, s, s);
+            }
+            System.out.println();
         }
     }
 }
