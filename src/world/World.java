@@ -22,10 +22,11 @@ public abstract class World {
         this.grid = new Tile[size][size];
         this.random = new Random();
         generate();
-        placeParty();
     }
 
     protected abstract void generate();
+
+    protected abstract void placeTiles(TileType type, int count);
 
     public void setMovementStrategy(MovementStrategy movementStrategy) {
         this.movementStrategy = movementStrategy;

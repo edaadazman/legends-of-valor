@@ -7,5 +7,6 @@ public enum TileType {
     NEXUS,
     BUSH,
     CAVE,
-    KOULOU
+    KOULOU,
+    PLAIN
 }
