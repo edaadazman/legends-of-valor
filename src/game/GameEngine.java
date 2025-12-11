@@ -14,6 +14,7 @@ import java.util.Random;
 public class GameEngine {
     private static final double BATTLE_CHANCE = 0.2;
 
+    private GameMode gameMode;
     private Party party;
     private World world;
     private BattleEngine battleEngine;
@@ -23,6 +24,7 @@ public class GameEngine {
     private boolean gameRunning;
 
     public GameEngine() {
+        this.gameMode = null;
         this.database = GameDatabase.getInstance();
         this.battleEngine = new BattleEngine();
         this.marketEngine = new MarketEngine();
@@ -34,7 +36,15 @@ public class GameEngine {
      * Start the game.
      */
     public void start() {
+        if (gameMode == null) {
+            gameMode = chooseMode();
+        }
         displayWelcome();
+        if (gameMode == GameMode.LEGENDS_OF_VALOR) {
+            System.out.println("\nLegends of Valor mode is under construction. Returning to menu...\n");
+            return;
+        }
+
         setupParty();
         world = new MHWorld();
 
@@ -54,12 +64,28 @@ public class GameEngine {
      * Display welcome message.
      */
     private void displayWelcome() {
-        System.out.println("\n===========================================");
-        System.out.println("  LEGENDS: MONSTERS AND HEROES");
-        System.out.println("  A Tale of Courage, Magic, and Glory");
-        System.out.println("===========================================");
-        System.out.println("\nThe realm is under siege by fearsome monsters...");
-        System.out.println("Brave heroes are needed to restore peace to the land!\n");
+        if (gameMode == GameMode.MONSTERS_AND_HEROES) {
+            System.out.println("\n===========================================");
+            System.out.println("  LEGENDS: MONSTERS AND HEROES");
+            System.out.println("  A Tale of Courage, Magic, and Glory");
+            System.out.println("===========================================");
+            System.out.println("\nThe realm is under siege by fearsome monsters...");
+            System.out.println("Brave heroes are needed to restore peace to the land!\n");
+        } else {
+            System.out.println("\n===========================================");
+            System.out.println("  LEGENDS OF VALOR");
+            System.out.println("  Three lanes await—defend your nexus!");
+            System.out.println("===========================================\n");
+        }
+    }
+
+    private GameMode chooseMode() {
+        System.out.println("Select Game Mode:");
+        System.out.println("1) Monsters and Heroes (classic)");
+        System.out.println("2) Legends of Valor (new)");
+
+        int choice = InputHelper.readInt("Enter choice: ", 1, 2);
+        return choice == 1 ? GameMode.MONSTERS_AND_HEROES : GameMode.LEGENDS_OF_VALOR;
     }
 
     /**

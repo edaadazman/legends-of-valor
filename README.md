@@ -5,6 +5,10 @@
 - Email: edaad@bu.edu
 - Student ID: U38459100
 
+- Name: Daniel Silla
+- Email: dsilla@bu.edu
+- Student ID: U24834540
+
 
 ## Files
 
