@@ -39,11 +39,14 @@ public class GameEngine {
         if (gameMode == null) {
             gameMode = chooseMode();
         }
-        displayWelcome();
         if (gameMode == GameMode.LEGENDS_OF_VALOR) {
-            System.out.println("\nLegends of Valor mode is under construction. Returning to menu...\n");
+            // Hand off entirely to the Valor engine so Valor-specific logic stays there
+            setupParty(3); // Valor always uses 3 heroes
+            new ValorGameEngine(party).start();
             return;
         }
+
+        displayWelcome();
 
         setupParty();
         world = new MHWorld();
@@ -92,8 +95,12 @@ public class GameEngine {
      * Setup the party by selecting heroes.
      */
     private void setupParty() {
-        System.out.println("=== ASSEMBLE YOUR PARTY ===");
         int numHeroes = InputHelper.readInt("\nHow many heroes will join your quest? (1-3): ", 1, 3);
+        setupParty(numHeroes);
+    }
+
+    private void setupParty(int numHeroes) {
+        System.out.println("=== ASSEMBLE YOUR PARTY ===");
 
         party = new Party();
         List<Hero> availableHeroes = database.getAllHeroes();

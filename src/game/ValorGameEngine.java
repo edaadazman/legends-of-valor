@@ -1,16 +1,27 @@
 package game;
 
+import characters.Party;
 import world.ValorWorld;
 
 public class ValorGameEngine {
-    private ValorWorld world;
+    private final ValorWorld world;
+    private final Party party;
 
     public ValorGameEngine() {
-        world = new ValorWorld();
+        this(new Party());
+    }
+
+    public ValorGameEngine(Party party) {
+        this.party = party;
+        this.world = new ValorWorld();
     }
 
     public void start() {
-        //TODO
+        System.out.println("\n===========================================");
+        System.out.println("  LEGENDS OF VALOR");
+        System.out.println("  Three lanes await—defend your nexus!");
+        System.out.println("===========================================\n");
+        System.out.println("Heroes ready: " + party.size());
         world.display();
     }
 }
