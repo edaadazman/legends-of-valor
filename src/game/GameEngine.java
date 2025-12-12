@@ -99,6 +99,7 @@ public class GameEngine {
         setupParty(numHeroes);
     }
 
+    /** Assemble a party with the specified number of heroes. */
     private void setupParty(int numHeroes) {
         System.out.println("=== ASSEMBLE YOUR PARTY ===");
 

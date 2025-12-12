@@ -10,12 +10,14 @@ public class Tile {
     private TileType type;
     private boolean hasParty;
     private Hero hero;
+    private int heroId;
     private Monster monster;
 
     public Tile(TileType type) {
         this.type = type;
         this.hasParty = false;
         this.hero = null;
+        this.heroId = 0;
         this.monster = null;
     }
 
@@ -44,9 +46,28 @@ public class Tile {
     }
 
     public Hero getHero() { return hero; }
-    public void setHero(Hero hero) { this.hero = hero; }
+
+    /** Set the hero occupant for this tile. */
+    public void setHero(Hero hero) {
+        this.hero = hero;
+        this.heroId = (hero == null) ? 0 : this.heroId;
+    }
+
+    /** Set the hero occupant for this tile along with a display id (1-3). */
+    public void setHero(Hero hero, int heroId) {
+        this.hero = hero;
+        this.heroId = (hero == null) ? 0 : heroId;
+    }
+
+    /** Get the display id for the hero on this tile (0 if none). */
+    public int getHeroId() { return heroId; }
     public boolean hasHero() { return hero != null; }
-    public void removeHero() { this.hero = null; }
+
+    /** Remove the hero occupant (and its display id) from this tile. */
+    public void removeHero() {
+        this.hero = null;
+        this.heroId = 0;
+    }
 
     public Monster getMonster() { return monster; }
     public void setMonster(Monster monster) { this.monster = monster; }
@@ -60,8 +81,14 @@ public class Tile {
         if (hasParty) {
             return "P";
         }
-        if (hero != null) return "H";
+        if (hero != null) return heroId > 0 ? ("H" + heroId) : "H";
         if (monster != null) return "M";
+
+        return getBaseSymbol();
+    }
+
+    /** Get the base (terrain) symbol for this tile, ignoring occupants. */
+    public String getBaseSymbol() {
 
         switch (type) {
             case MARKET:

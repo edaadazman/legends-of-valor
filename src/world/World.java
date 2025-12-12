@@ -24,6 +24,10 @@ public abstract class World {
         generate();
     }
 
+    public int getSize() {
+        return size;
+    }
+
     protected abstract void generate();
 
     protected abstract void placeTiles(TileType type, int count);

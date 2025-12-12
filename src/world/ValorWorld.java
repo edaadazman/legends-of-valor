@@ -56,7 +56,7 @@ public class ValorWorld extends World{
             // Top of tile box
             System.out.print(" ");
             for (int c = 0; c < size; c++) {
-                String s = grid[r][c].getSymbol();
+                String s = grid[r][c].getBaseSymbol();
                 System.out.printf(" %s - %s - %s ", s, s, s);
             }
             System.out.println();
@@ -73,7 +73,8 @@ public class ValorWorld extends World{
                 }
 
                 if (tile.hasHero()) {
-                    System.out.print("H1 ");
+                    int heroId = tile.getHeroId();
+                    System.out.print(heroId > 0 ? ("H" + heroId + " ") : "H  ");
                 } else {
                     System.out.print("   ");
                 }
@@ -90,7 +91,7 @@ public class ValorWorld extends World{
             // Bottom of tile box
             System.out.print(" ");
             for (int c = 0; c < size; c++) {
-                String s = grid[r][c].getSymbol();
+                String s = grid[r][c].getBaseSymbol();
                 System.out.printf(" %s - %s - %s ", s, s, s);
             }
             System.out.println();
