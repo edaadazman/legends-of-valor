@@ -26,13 +26,19 @@ public class ValorMovementStrategy implements MovementStrategy {
 
     @Override
     public boolean moveMonster(Monster monster, World world) {
-        int newRow = monster.getRow() + 1; // example forward movement
+        int newRow = monster.getRow() + 1; // Move down (toward heroes)
         int col = monster.getCol();
 
+        Tile oldTile = world.getTile(monster.getRow(), col);
         Tile newTile = world.getTile(newRow, col);
+        
         if (newTile != null && newTile.isAccessible() && !newTile.hasMonster()) {
-            world.getTile(monster.getRow(), col).removeMonster();
-            newTile.setMonster(monster);
+            int monsterId = oldTile != null ? oldTile.getMonsterId() : 0;
+            
+            if (oldTile != null) {
+                oldTile.removeMonster();
+            }
+            newTile.setMonster(monster, monsterId);
             monster.setPosition(newRow, col);
             return true;
         }

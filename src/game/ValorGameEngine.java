@@ -1,14 +1,23 @@
 package game;
 
 import characters.Hero;
+import characters.Monster;
+import characters.MonsterFactory;
 import characters.Party;
+import data.GameDatabase;
 import util.InputHelper;
 import world.Tile;
 import world.ValorWorld;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 public class ValorGameEngine {
     private final ValorWorld world;
     private final Party party;
+    private final List<Monster> monsters;
+    private final Random random;
 
     public ValorGameEngine() {
         this(new Party());
@@ -17,6 +26,8 @@ public class ValorGameEngine {
     public ValorGameEngine(Party party) {
         this.party = party;
         this.world = new ValorWorld();
+        this.monsters = new ArrayList<>();
+        this.random = new Random();
     }
 
     public void start() {
@@ -26,6 +37,7 @@ public class ValorGameEngine {
         System.out.println("===========================================\n");
 
         placeHeroesAtBottomNexus();
+        placeMonstersAtTopNexus();
 
         boolean running = true;
         while (running) {
@@ -69,6 +81,11 @@ public class ValorGameEngine {
                     }
                 }
             }
+
+            // After all heroes move, monsters move down
+            if (running) {
+                moveMonsters();
+            }
         }
     }
 
@@ -77,6 +94,16 @@ public class ValorGameEngine {
         boolean ok = world.moveHero(hero, dr, dc);
         if (!ok) {
             System.out.println("Move blocked.");
+        } else {
+            // Check if hero reached the top nexus (row 0)
+            if (hero.getRow() == 0) {
+                world.display();
+                System.out.println("\n" + "=".repeat(50));
+                System.out.println("VICTORY! " + hero.getName() + " has reached the enemy nexus!");
+                System.out.println("The heroes have won the battle!");
+                System.out.println("=".repeat(50) + "\n");
+                System.exit(0);
+            }
         }
         return ok;
     }
@@ -105,6 +132,76 @@ public class ValorGameEngine {
 
             tile.setHero(hero, i + 1);
             hero.setPosition(row, col);
+        }
+    }
+
+    /** Place 3 monsters on the top nexus (one per lane), randomly selected from Dragons, Exoskeletons, and Spirits. */
+    private void placeMonstersAtTopNexus() {
+        GameDatabase db = GameDatabase.getInstance();
+        
+        // One monster per lane (cols 0/3/6 are lane anchors)
+        int[] laneCols = { 0, 3, 6 };
+        int row = 0; // top Nexus row
+
+        for (int i = 0; i < 3; i++) {
+            // Randomly pick a monster from the database
+            Monster template = db.getRandomMonster();
+            if (template == null) {
+                System.out.println("Could not create monster M" + (i + 1) + ".");
+                continue;
+            }
+
+            // Create a level 1 monster based on the template
+            Monster monster = new Monster(
+                template.getName(),
+                1, // Starting level
+                template.getMonsterType(),
+                template.getBaseDamage(),
+                template.getDefense(),
+                (int) (template.getDodgeChance() * 100)
+            );
+
+            int col = laneCols[i];
+            Tile tile = world.getTile(row, col);
+            if (tile == null || !tile.isAccessible() || tile.hasMonster()) {
+                System.out.println("Could not place M" + (i + 1) + " at (" + row + "," + col + ").");
+                continue;
+            }
+
+            tile.setMonster(monster, i + 1);
+            monster.setPosition(row, col);
+            monsters.add(monster);
+            
+            System.out.println("M" + (i + 1) + ": " + monster.getName() + " (" + monster.getMonsterType() + ") spawned at lane " + (i + 1));
+        }
+    }
+
+    /** Move all monsters down one row each turn and print their moves. */
+    private void moveMonsters() {
+        System.out.println("\n--- Monster Turn ---");
+        
+        for (int i = 0; i < monsters.size(); i++) {
+            Monster monster = monsters.get(i);
+            int oldRow = monster.getRow();
+            int oldCol = monster.getCol();
+            
+            boolean moved = world.moveMonster(monster);
+            
+            if (moved) {
+                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") moved from (" + oldRow + "," + oldCol + ") to (" + monster.getRow() + "," + monster.getCol() + ")");
+                
+                // Check if monster reached the bottom nexus (last row)
+                if (monster.getRow() == world.getSize() - 1) {
+                    world.display();
+                    System.out.println("\n" + "=".repeat(50));
+                    System.out.println("DEFEAT! " + monster.getName() + " has reached your nexus!");
+                    System.out.println("The monsters have won the battle!");
+                    System.out.println("=".repeat(50) + "\n");
+                    System.exit(0);
+                }
+            } else {
+                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") could not move (blocked)");
+            }
         }
     }
 }

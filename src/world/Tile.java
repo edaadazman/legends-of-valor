@@ -12,6 +12,7 @@ public class Tile {
     private Hero hero;
     private int heroId;
     private Monster monster;
+    private int monsterId;
 
     public Tile(TileType type) {
         this.type = type;
@@ -19,6 +20,7 @@ public class Tile {
         this.hero = null;
         this.heroId = 0;
         this.monster = null;
+        this.monsterId = 0;
     }
 
     public TileType getType() {
@@ -70,9 +72,25 @@ public class Tile {
     }
 
     public Monster getMonster() { return monster; }
-    public void setMonster(Monster monster) { this.monster = monster; }
+    
+    public void setMonster(Monster monster) { 
+        this.monster = monster;
+        this.monsterId = (monster == null) ? 0 : this.monsterId;
+    }
+    
+    /** Set the monster occupant for this tile along with a display id (1-3). */
+    public void setMonster(Monster monster, int monsterId) {
+        this.monster = monster;
+        this.monsterId = (monster == null) ? 0 : monsterId;
+    }
+    
+    public int getMonsterId() { return monsterId; }
     public boolean hasMonster() { return monster != null; }
-    public void removeMonster() { this.monster = null; }
+    
+    public void removeMonster() { 
+        this.monster = null;
+        this.monsterId = 0;
+    }
 
     /**
      * Get display symbol for this tile.
@@ -82,7 +100,7 @@ public class Tile {
             return "P";
         }
         if (hero != null) return heroId > 0 ? ("H" + heroId) : "H";
-        if (monster != null) return "M";
+        if (monster != null) return monsterId > 0 ? ("M" + monsterId) : "M";
 
         return getBaseSymbol();
     }
