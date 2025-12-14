@@ -79,10 +79,14 @@ public class LegendsOfValor extends RPG {
                         case 'd':
                             turnComplete = attemptMove(hero, 0, 1);
                             break;
-                        case 't':
+                        case 'f':
                             // Attack - ask for direction
                             char attackDir = Character.toLowerCase(InputHelper.readChar("Attack direction (W/A/S/D): "));
                             turnComplete = attemptAttack(hero, attackDir);
+                            break;
+                        case 't':
+                            // Teleport to another hero's lane
+                            turnComplete = attemptTeleport(hero, heroIdx);
                             break;
                         case 'i':
                             hero.displayStats();
@@ -106,7 +110,8 @@ public class LegendsOfValor extends RPG {
 
     private void displayControls() {
         System.out.println("W/A/S/D - Move");
-        System.out.println("T - Choose Direction Then Attack monster");
+        System.out.println("F + Direction (W/A/S/D) - Attack monster in that direction");
+        System.out.println("T - Teleport to another hero's lane");
         System.out.println("I - Info");
         System.out.println("Q - Quit");
     }
@@ -200,6 +205,111 @@ public class LegendsOfValor extends RPG {
         monsters.remove(monster);
 
         return true; // Attack consumes turn
+    }
+
+    /** Teleport to a space next to another hero in a different lane. */
+    private boolean attemptTeleport(Hero hero, int currentHeroIdx) {
+        // Find heroes in different lanes
+        int currentLane = hero.getCol() / 3; // 0, 1, or 2
+        List<Hero> teleportTargets = new ArrayList<>();
+        List<Integer> targetIndices = new ArrayList<>();
+
+        for (int i = 0; i < party.size(); i++) {
+            if (i == currentHeroIdx) continue; // Skip self
+            
+            Hero otherHero = party.getHero(i);
+            int otherLane = otherHero.getCol() / 3;
+            
+            if (otherLane != currentLane) {
+                teleportTargets.add(otherHero);
+                targetIndices.add(i);
+            }
+        }
+
+        if (teleportTargets.isEmpty()) {
+            System.out.println("No heroes in other lanes to teleport to.");
+            return false; // No turn consumed
+        }
+
+        // Display available targets
+        System.out.println("\nSelect hero to teleport next to:");
+        for (int i = 0; i < teleportTargets.size(); i++) {
+            Hero target = teleportTargets.get(i);
+            System.out.println((i + 1) + ") H" + (targetIndices.get(i) + 1) + " - " + target.getName() + 
+                             " at (" + target.getRow() + "," + target.getCol() + ")");
+        }
+        System.out.println("0) Cancel");
+
+        int choice = InputHelper.readInt("Choice: ", 0, teleportTargets.size());
+        if (choice == 0) {
+            System.out.println("Teleport cancelled.");
+            return false; // No turn consumed
+        }
+
+        Hero targetHero = teleportTargets.get(choice - 1);
+        
+        // Find all available adjacent spaces next to the target hero
+        // Cannot teleport above (forward) - only left, right, or below
+        int[][] directions = {{0, -1}, {0, 1}, {1, 0}}; // left, right, below
+        String[] directionNames = {"Left", "Right", "Below"};
+        List<int[]> availableSpaces = new ArrayList<>();
+        List<String> spaceNames = new ArrayList<>();
+
+        for (int i = 0; i < directions.length; i++) {
+            int newRow = targetHero.getRow() + directions[i][0];
+            int newCol = targetHero.getCol() + directions[i][1];
+            Tile tile = world.getTile(newRow, newCol);
+            
+            if (tile != null && tile.isAccessible() && !tile.hasHero() && !tile.hasMonster()) {
+                availableSpaces.add(new int[]{newRow, newCol});
+                spaceNames.add(directionNames[i] + " (" + newRow + "," + newCol + ")");
+            }
+        }
+
+        if (availableSpaces.isEmpty()) {
+            System.out.println("No available space next to " + targetHero.getName() + ".");
+            return false; // No turn consumed
+        }
+
+        // Ask user to select position
+        int positionChoice;
+        if (availableSpaces.size() == 1) {
+            // Only one option, use it automatically
+            positionChoice = 1;
+            System.out.println("Teleporting to " + spaceNames.get(0) + " of " + targetHero.getName());
+        } else {
+            // Multiple options, let user choose
+            System.out.println("\nSelect position next to " + targetHero.getName() + ":");
+            for (int i = 0; i < spaceNames.size(); i++) {
+                System.out.println((i + 1) + ") " + spaceNames.get(i));
+            }
+            System.out.println("0) Cancel");
+            
+            positionChoice = InputHelper.readInt("Choice: ", 0, availableSpaces.size());
+            if (positionChoice == 0) {
+                System.out.println("Teleport cancelled.");
+                return false; // No turn consumed
+            }
+        }
+
+        int[] selectedPos = availableSpaces.get(positionChoice - 1);
+        int bestRow = selectedPos[0];
+        int bestCol = selectedPos[1];
+
+        // Perform teleport
+        Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
+        int heroId = oldTile != null ? oldTile.getHeroId() : 0;
+        
+        if (oldTile != null) {
+            oldTile.removeHero();
+        }
+        
+        Tile newTile = world.getTile(bestRow, bestCol);
+        newTile.setHero(hero, heroId);
+        hero.setPosition(bestRow, bestCol);
+        
+        System.out.println(hero.getName() + " teleported to (" + bestRow + "," + bestCol + ") next to " + targetHero.getName() + "!");
+        return true; // Teleport consumes turn
     }
 
     private void placeHeroesAtBottomNexus() {
