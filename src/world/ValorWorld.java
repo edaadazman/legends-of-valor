@@ -1,11 +1,12 @@
 package world;
 
-public class ValorWorld extends World {
+public class ValorWorld extends World{
 
     private static final int DEFAULT_VALOR_WORLD_SIZE = 8;
     private static final double BUSH_RATIO = 0.20;
     private static final double CAVE_RATIO = 0.20;
     private static final double KOULOU_RATIO = 0.20;
+
 
     public ValorWorld() {
         super(DEFAULT_VALOR_WORLD_SIZE);
@@ -62,7 +63,7 @@ public class ValorWorld extends World {
 
             // Middle of tile box
             System.out.print(" ");
-            for (int c = 0; c < size; c++) {
+            for  (int c = 0; c < size; c++) {
                 Tile tile = grid[r][c];
                 System.out.print(" | ");
 
@@ -79,8 +80,8 @@ public class ValorWorld extends World {
                 }
 
                 if (tile.hasMonster()) {
-                    int monsterId = tile.getMonster().getLaneIndex() + 1;
-                    System.out.print("M" + monsterId + " ");
+                    int monsterId = tile.getMonsterId();
+                    System.out.print(monsterId > 0 ? ("M" + monsterId + " ") : "M  ");
                 } else {
                     System.out.print("   ");
                 }
@@ -98,3 +99,4 @@ public class ValorWorld extends World {
         }
     }
 }
+
