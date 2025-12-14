@@ -79,6 +79,11 @@ public class LegendsOfValor extends RPG {
                         case 'd':
                             turnComplete = attemptMove(hero, 0, 1);
                             break;
+                        case 't':
+                            // Attack - ask for direction
+                            char attackDir = Character.toLowerCase(InputHelper.readChar("Attack direction (W/A/S/D): "));
+                            turnComplete = attemptAttack(hero, attackDir);
+                            break;
                         case 'i':
                             hero.displayStats();
                             break;
@@ -101,11 +106,51 @@ public class LegendsOfValor extends RPG {
 
     private void displayControls() {
         System.out.println("W/A/S/D - Move");
+        System.out.println("T - Choose Direction Then Attack monster");
         System.out.println("I - Info");
         System.out.println("Q - Quit");
     }
 
     private boolean attemptMove(Hero hero, int dr, int dc) {
+        int newRow = hero.getRow() + dr;
+        int newCol = hero.getCol() + dc;
+        
+        // Check if there's a monster at the target location - auto-attack it
+        Tile targetTile = world.getTile(newRow, newCol);
+        if (targetTile != null && targetTile.hasMonster()) {
+            Monster monster = targetTile.getMonster();
+            System.out.println(hero.getName() + " attacked " + monster.getName() + "!");
+            System.out.println("TODO: Implement combat system");
+            System.out.println("Monster was defeated!");
+            
+            // Remove monster from board and list
+            targetTile.removeMonster();
+            monsters.remove(monster);
+            
+            return true; // Combat ends turn
+        }
+        
+        // If trying to move forward (up), check if we're trying to move PAST a monster in our lane
+        // Lanes are: 0-1, 3-4, 6-7 (2-column wide)
+        if (dr == -1 && dc == 0) { // Moving up (forward)
+            // Determine which lane the hero is in
+            int laneStartCol = (hero.getCol() / 3) * 3; // 0, 3, or 6
+            int laneEndCol = laneStartCol + 1;
+            
+            // Check if there's a monster at the same row in another column of this lane
+            // (trying to sidestep past a monster)
+            for (int checkCol = laneStartCol; checkCol <= laneEndCol; checkCol++) {
+                if (checkCol == hero.getCol()) continue; // Skip our own column
+                
+                Tile sameLevelTile = world.getTile(hero.getRow(), checkCol);
+                if (sameLevelTile != null && sameLevelTile.hasMonster()) {
+                    System.out.println("Cannot move past monster " + sameLevelTile.getMonster().getName() + " in your lane!");
+                    System.out.println("You must engage it first.");
+                    return false;
+                }
+            }
+        }
+        
         boolean ok = world.moveHero(hero, dr, dc);
         if (!ok) {
             System.out.println("Move blocked.");
@@ -121,6 +166,40 @@ public class LegendsOfValor extends RPG {
             }
         }
         return ok;
+    }
+
+    /** Attack a monster in an adjacent space (up, down, left, right). */
+    private boolean attemptAttack(Hero hero, char direction) {
+        int targetRow = hero.getRow();
+        int targetCol = hero.getCol();
+
+        // Determine target based on direction
+        switch (direction) {
+            case 'w': targetRow--; break; // up
+            case 's': targetRow++; break; // down
+            case 'a': targetCol--; break; // left
+            case 'd': targetCol++; break; // right
+            default:
+                System.out.println("Invalid attack direction.");
+                return false;
+        }
+
+        Tile targetTile = world.getTile(targetRow, targetCol);
+        if (targetTile == null || !targetTile.hasMonster()) {
+            System.out.println("No monster in that direction.");
+            return false;
+        }
+
+        Monster monster = targetTile.getMonster();
+        System.out.println(hero.getName() + " attacked " + monster.getName() + "!");
+        System.out.println("TODO: Implement combat system");
+        System.out.println("Monster was defeated!");
+
+        // Remove monster from board and list
+        targetTile.removeMonster();
+        monsters.remove(monster);
+
+        return true; // Attack consumes turn
     }
 
     private void placeHeroesAtBottomNexus() {
@@ -193,10 +272,34 @@ public class LegendsOfValor extends RPG {
     private void moveMonsters() {
         System.out.println("\n--- Monster Turn ---");
         
+        List<Monster> toRemove = new ArrayList<>();
+        
         for (int i = 0; i < monsters.size(); i++) {
             Monster monster = monsters.get(i);
             int oldRow = monster.getRow();
             int oldCol = monster.getCol();
+            
+            // Check if there's a hero in the next space (combat trigger)
+            Tile nextTile = world.getTile(oldRow + 1, oldCol);
+            if (nextTile != null && nextTile.hasHero()) {
+                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") engaged " + nextTile.getHero().getName() + " in combat!");
+                System.out.println("TODO: Implement combat system");
+                System.out.println("Monster was defeated!");
+                
+                // Remove monster from board
+                Tile monsterTile = world.getTile(oldRow, oldCol);
+                if (monsterTile != null) {
+                    monsterTile.removeMonster();
+                }
+                toRemove.add(monster);
+                continue;
+            }
+            
+            // Check if there's a hero directly adjacent (one space ahead) blocking movement
+            if (nextTile != null && nextTile.hasHero()) {
+                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") cannot move past hero in lane");
+                continue;
+            }
             
             boolean moved = world.moveMonster(monster);
             
@@ -216,5 +319,8 @@ public class LegendsOfValor extends RPG {
                 System.out.println("M" + (i + 1) + " (" + monster.getName() + ") could not move (blocked)");
             }
         }
+        
+        // Remove defeated monsters from the list
+        monsters.removeAll(toRemove);
     }
 }
