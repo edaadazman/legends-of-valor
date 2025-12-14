@@ -18,6 +18,11 @@ public class Hero extends Character {
     private Weapon equippedWeapon;
     private Armor equippedArmor;
 
+    // Spawn tracking for Legends of Valor
+    private int spawnRow;
+    private int spawnCol;
+    private int laneIndex;
+
     public Hero(String name, int level, HeroType heroType, int mana,
             int strength, int dexterity, int agility, int gold) {
         super(name, level, level * 100);
@@ -32,6 +37,9 @@ public class Hero extends Character {
         this.inventory = new Inventory();
         this.equippedWeapon = null;
         this.equippedArmor = null;
+        this.spawnRow = -1;
+        this.spawnCol = -1;
+        this.laneIndex = -1;
     }
 
     public HeroType getHeroType() {
@@ -161,8 +169,8 @@ public class Hero extends Character {
      * Recover HP and Mana at end of battle round (10% each).
      */
     public void recover() {
-        this.hp = (int) (this.hp * 1.1);
-        this.mana = (int) (this.mana * 1.1);
+        this.hp = Math.min(maxHp, hp + (int) (maxHp * 0.1));
+        this.mana = Math.min(maxMana, mana + (int) (maxMana * 0.1));
     }
 
     /**
@@ -171,6 +179,43 @@ public class Hero extends Character {
     public void revive() {
         this.hp = this.maxHp / 2;
         this.mana = this.maxMana / 2;
+    }
+
+    /**
+     * Respawn hero at their Nexus with full HP and MP (for Legends of Valor).
+     */
+    public void respawnAtNexus() {
+        this.hp = this.maxHp;
+        this.mana = this.maxMana;
+        this.row = this.spawnRow;
+        this.col = this.spawnCol;
+    }
+
+    // Spawn tracking getters/setters for Legends of Valor
+    public int getSpawnRow() {
+        return spawnRow;
+    }
+
+    public int getSpawnCol() {
+        return spawnCol;
+    }
+
+    public int getLaneIndex() {
+        return laneIndex;
+    }
+
+    public void setSpawnLocation(int row, int col, int laneIndex) {
+        this.spawnRow = row;
+        this.spawnCol = col;
+        this.laneIndex = laneIndex;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
+    }
+
+    public int getMaxMana() {
+        return maxMana;
     }
 
     /**
