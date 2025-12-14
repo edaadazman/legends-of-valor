@@ -10,7 +10,8 @@ public class ValorMovementStrategy implements MovementStrategy {
         int newCol = hero.getCol() + dc;
 
         Tile newTile = world.getTile(newRow, newCol);
-        if (newTile == null || !newTile.isAccessible() || newTile.hasHero()) return false;
+        if (newTile == null || !newTile.isAccessible() || newTile.hasHero())
+            return false;
 
         Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
         int heroId = oldTile != null ? oldTile.getHeroId() : 0;
@@ -26,17 +27,29 @@ public class ValorMovementStrategy implements MovementStrategy {
 
     @Override
     public boolean moveMonster(Monster monster, World world) {
-        int newRow = monster.getRow() + 1; // example forward movement
+        int newRow = monster.getRow() + 1;
         int col = monster.getCol();
 
+        Tile currentTile = world.getTile(monster.getRow(), col);
         Tile newTile = world.getTile(newRow, col);
-        if (newTile != null && newTile.isAccessible() && !newTile.hasMonster()) {
-            world.getTile(monster.getRow(), col).removeMonster();
-            newTile.setMonster(monster);
-            monster.setPosition(newRow, col);
-            return true;
+
+        if (newTile == null || !newTile.isAccessible()) {
+            return false;
         }
 
-        return false;
+        if (newTile.hasMonster()) {
+            return false;
+        }
+
+        if (currentTile != null && currentTile.hasHero()) {
+            return false;
+        }
+
+        if (currentTile != null) {
+            currentTile.removeMonster();
+        }
+        newTile.setMonster(monster);
+        monster.setPosition(newRow, col);
+        return true;
     }
 }
