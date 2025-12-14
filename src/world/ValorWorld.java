@@ -80,7 +80,8 @@ public class ValorWorld extends World{
                 }
 
                 if (tile.hasMonster()) {
-                    System.out.print("M1 ");
+                    int monsterId = tile.getMonsterId();
+                    System.out.print(monsterId > 0 ? ("M" + monsterId + " ") : "M  ");
                 } else {
                     System.out.print("   ");
                 }

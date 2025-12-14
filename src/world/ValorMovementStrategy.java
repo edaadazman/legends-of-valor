@@ -31,8 +31,11 @@ public class ValorMovementStrategy implements MovementStrategy {
 
         Tile newTile = world.getTile(newRow, col);
         if (newTile != null && newTile.isAccessible() && !newTile.hasMonster()) {
-            world.getTile(monster.getRow(), col).removeMonster();
-            newTile.setMonster(monster);
+            Tile oldTile = world.getTile(monster.getRow(), col);
+            int monsterId = oldTile != null ? oldTile.getMonsterId() : 0;
+            
+            oldTile.removeMonster();
+            newTile.setMonster(monster, monsterId);
             monster.setPosition(newRow, col);
             return true;
         }
