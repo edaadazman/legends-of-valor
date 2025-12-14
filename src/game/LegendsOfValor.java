@@ -95,6 +95,11 @@ public class LegendsOfValor extends RPG {
                             break;
                     }
                 }
+                // Display world after each hero's turn
+                if (gameRunning && turnComplete) {
+                    System.out.println(); // Add blank line for readability
+                    world.display();
+                }
             }
 
             // After all heroes move, monsters move down
