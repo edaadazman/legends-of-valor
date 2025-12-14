@@ -1,7 +1,6 @@
 package game;
 
-import characters.*;
-import data.GameDatabase;
+import characters.Hero;
 import items.*;
 import util.InputHelper;
 import world.*;
@@ -9,140 +8,61 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Main game engine that controls game flow and user interactions.
+ * Monsters and Heroes game implementation.
  */
-public class GameEngine {
+public class MonstersAndHeroes extends RPG {
     private static final double BATTLE_CHANCE = 0.2;
-
-    private GameMode gameMode;
-    private Party party;
+    
     private World world;
-    private BattleEngine battleEngine;
-    private MarketEngine marketEngine;
-    private GameDatabase database;
     private Random random;
-    private boolean gameRunning;
 
-    public GameEngine() {
-        this.gameMode = null;
-        this.database = GameDatabase.getInstance();
-        this.battleEngine = new BattleEngine();
-        this.marketEngine = new MarketEngine();
+    public MonstersAndHeroes() {
+        super();
         this.random = new Random();
-        this.gameRunning = true;
     }
 
-    /**
-     * Start the game.
-     */
+    @Override
+    protected void displayWelcome() {
+        System.out.println("\n===========================================");
+        System.out.println("  LEGENDS: MONSTERS AND HEROES");
+        System.out.println("  A Tale of Courage, Magic, and Glory");
+        System.out.println("===========================================");
+        System.out.println("\nThe realm is under siege by fearsome monsters...");
+        System.out.println("Brave heroes are needed to restore peace to the land!\n");
+    }
+
+    @Override
+    protected int getRequiredHeroCount() {
+        return InputHelper.readInt("\nHow many heroes will join your quest? (1-3): ", 1, 3);
+    }
+
+    @Override
     public void start() {
-        if (gameMode == null) {
-            gameMode = chooseMode();
-        }
-        if (gameMode == GameMode.LEGENDS_OF_VALOR) {
-            // Hand off entirely to the Valor engine so Valor-specific logic stays there
-            setupParty(3); // Valor always uses 3 heroes
-            new ValorGameEngine(party).start();
-            return;
-        }
-
         displayWelcome();
-
         setupParty();
         world = new MHWorld();
 
         System.out.println("\nYour epic journey begins!");
         System.out.println("May fortune favor the bold...\n");
 
+        gameLoop();
+        endGame();
+    }
+
+    @Override
+    protected void gameLoop() {
         while (gameRunning) {
             displayWorld();
             displayControls();
             handleInput();
         }
-
-        System.out.println("\nThanks for playing! Safe travels, hero!\n");
     }
 
-    /**
-     * Display welcome message.
-     */
-    private void displayWelcome() {
-        if (gameMode == GameMode.MONSTERS_AND_HEROES) {
-            System.out.println("\n===========================================");
-            System.out.println("  LEGENDS: MONSTERS AND HEROES");
-            System.out.println("  A Tale of Courage, Magic, and Glory");
-            System.out.println("===========================================");
-            System.out.println("\nThe realm is under siege by fearsome monsters...");
-            System.out.println("Brave heroes are needed to restore peace to the land!\n");
-        } else {
-            System.out.println("\n===========================================");
-            System.out.println("  LEGENDS OF VALOR");
-            System.out.println("  Three lanes await—defend your nexus!");
-            System.out.println("===========================================\n");
-        }
-    }
-
-    private GameMode chooseMode() {
-        System.out.println("Select Game Mode:");
-        System.out.println("1) Monsters and Heroes (classic)");
-        System.out.println("2) Legends of Valor (new)");
-
-        int choice = InputHelper.readInt("Enter choice: ", 1, 2);
-        return choice == 1 ? GameMode.MONSTERS_AND_HEROES : GameMode.LEGENDS_OF_VALOR;
-    }
-
-    /**
-     * Setup the party by selecting heroes.
-     */
-    private void setupParty() {
-        int numHeroes = InputHelper.readInt("\nHow many heroes will join your quest? (1-3): ", 1, 3);
-        setupParty(numHeroes);
-    }
-
-    /** Assemble a party with the specified number of heroes. */
-    private void setupParty(int numHeroes) {
-        System.out.println("=== ASSEMBLE YOUR PARTY ===");
-
-        party = new Party();
-        List<Hero> availableHeroes = database.getAllHeroes();
-
-        System.out.println("\nLegendary Heroes Available for Recruitment:");
-        for (int i = 0; i < availableHeroes.size(); i++) {
-            Hero hero = availableHeroes.get(i);
-            System.out.println((i + 1) + ") " + hero.getName() + " [" + hero.getHeroType() + "]");
-        }
-
-        for (int i = 0; i < numHeroes; i++) {
-            int choice = InputHelper.readInt("\nRecruit hero #" + (i + 1) + ": ", 1, availableHeroes.size());
-            Hero selectedHero = availableHeroes.get(choice - 1);
-
-            Hero hero = new Hero(
-                    selectedHero.getName(),
-                    selectedHero.getLevel(),
-                    selectedHero.getHeroType(),
-                    selectedHero.getMana(),
-                    selectedHero.getStrength(),
-                    selectedHero.getDexterity(),
-                    selectedHero.getAgility(),
-                    selectedHero.getGold());
-
-            party.addHero(hero);
-            System.out.println(hero.getName() + " has joined your party!");
-        }
-        System.out.println();
-    }
-
-    /**
-     * Display the world map.
-     */
     private void displayWorld() {
         System.out.println();
         world.display();
     }
 
-    /**
-     * Display game controls.
-     */
     private void displayControls() {
         System.out.println("\nControls:");
         System.out.println("W/A/S/D - Move");
@@ -153,13 +73,10 @@ public class GameEngine {
         System.out.println();
     }
 
-    /**
-     * Handle user input.
-     */
     private void handleInput() {
         char input = InputHelper.readChar("Enter command: ");
 
-        switch (java.lang.Character.toLowerCase(input)) {
+        switch (Character.toLowerCase(input)) {
             case 'w':
                 moveParty(-1, 0);
                 break;
@@ -190,18 +107,12 @@ public class GameEngine {
         }
     }
 
-    /**
-     * Move the party and handle tile events.
-     */
     private void moveParty(int deltaRow, int deltaCol) {
         if (world.moveHero(null, deltaRow, deltaCol)) {
             handleTileEvent();
         }
     }
 
-    /**
-     * Handle events on the current tile.
-     */
     private void handleTileEvent() {
         Tile currentTile = world.getCurrentTile();
 
@@ -209,24 +120,17 @@ public class GameEngine {
             System.out.println("\nYou've discovered a bustling marketplace!");
             System.out.println("Press [M] to browse wares and trade goods.");
         } else if (currentTile.isCommon()) {
-            // Random chance of battle
             if (random.nextDouble() < BATTLE_CHANCE) {
                 boolean won = battleEngine.startBattle(party);
                 if (!won) {
                     gameRunning = false;
                 }
             } else {
-                String[] peacefulMessages = {
-                        "The path ahead is quiet. Your party continues onward.",
-                };
-                System.out.println("\n" + peacefulMessages[random.nextInt(peacefulMessages.length)]);
+                System.out.println("\nThe path ahead is quiet. Your party continues onward.");
             }
         }
     }
 
-    /**
-     * Enter the market if on a market tile.
-     */
     private void enterMarket() {
         Tile currentTile = world.getCurrentTile();
 
@@ -238,18 +142,7 @@ public class GameEngine {
         marketEngine.enterMarket(party);
     }
 
-    /**
-     * Display party information.
-     */
-    private void displayInfo() {
-        party.displayDetailedStats();
-    }
-
-    /**
-     * Manage inventory and equipment outside of battle.
-     */
     private void manageInventory() {
-        // Select hero
         System.out.println("\n=== Inventory Management ===");
         System.out.println("Choose hero:");
         for (int i = 0; i < party.size(); i++) {
@@ -295,9 +188,6 @@ public class GameEngine {
         }
     }
 
-    /**
-     * Equip a weapon outside of battle.
-     */
     private void equipWeaponOutsideBattle(Hero hero) {
         List<Weapon> weapons = hero.getInventory().getWeapons();
 
@@ -323,9 +213,6 @@ public class GameEngine {
         System.out.println(hero.getName() + " equipped " + weapon.getName() + ".");
     }
 
-    /**
-     * Equip armor outside of battle.
-     */
     private void equipArmorOutsideBattle(Hero hero) {
         List<Armor> armors = hero.getInventory().getArmor();
 
@@ -351,9 +238,6 @@ public class GameEngine {
         System.out.println(hero.getName() + " equipped " + armor.getName() + ".");
     }
 
-    /**
-     * Use a potion outside of battle.
-     */
     private void usePotionOutsideBattle(Hero hero) {
         List<Potion> potions = hero.getInventory().getPotions();
 
@@ -378,9 +262,6 @@ public class GameEngine {
         hero.getInventory().removeItem(potion);
     }
 
-    /**
-     * View hero's full inventory.
-     */
     private void viewInventory(Hero hero) {
         System.out.println("\n=== " + hero.getName() + "'s Full Inventory ===");
 
@@ -426,9 +307,7 @@ public class GameEngine {
         }
 
         System.out.println("\nCurrently Equipped:");
-        System.out.println(
-                "  Weapon: " + (hero.getEquippedWeapon() != null ? hero.getEquippedWeapon().getName() : "None"));
-        System.out
-                .println("  Armor: " + (hero.getEquippedArmor() != null ? hero.getEquippedArmor().getName() : "None"));
+        System.out.println("  Weapon: " + (hero.getEquippedWeapon() != null ? hero.getEquippedWeapon().getName() : "None"));
+        System.out.println("  Armor: " + (hero.getEquippedArmor() != null ? hero.getEquippedArmor().getName() : "None"));
     }
 }
