@@ -79,10 +79,16 @@ public class LegendsOfValor extends RPG {
                         case 'd':
                             turnComplete = attemptMove(hero, 0, 1);
                             break;
-                        case 't':
+                        case 'f':
                             // Attack - ask for direction
                             char attackDir = Character.toLowerCase(InputHelper.readChar("Attack direction (W/A/S/D): "));
                             turnComplete = attemptAttack(hero, attackDir);
+                            break;
+                        case 't':
+                            turnComplete = attemptTeleport(hero, heroIdx);
+                            break;
+                        case 'r':
+                            turnComplete = attemptRecall(hero, heroIdx);
                             break;
                         case 'i':
                             hero.displayStats();
@@ -106,7 +112,9 @@ public class LegendsOfValor extends RPG {
 
     private void displayControls() {
         System.out.println("W/A/S/D - Move");
-        System.out.println("T - Choose Direction Then Attack monster");
+        System.out.println("F - Attack monster");
+        System.out.println("T - Teleport to another lane");
+        System.out.println("R - Recall to Nexus");
         System.out.println("I - Info");
         System.out.println("Q - Quit");
     }
@@ -202,6 +210,122 @@ public class LegendsOfValor extends RPG {
         return true; // Attack consumes turn
     }
 
+    /** Recall hero back to their spawn nexus. */
+    private boolean attemptRecall(Hero hero, int heroIdx) {
+        int currentRow = hero.getRow();
+        int currentCol = hero.getCol();
+        int spawnRow = hero.getSpawnRow();
+        int spawnCol = hero.getSpawnCol();
+
+        // Check if hero is already at their nexus
+        if (currentRow == spawnRow && currentCol == spawnCol) {
+            System.out.println(hero.getName() + " is already at their nexus.");
+            return false;
+        }
+
+        // Check if spawn nexus is occupied
+        Tile spawnTile = world.getTile(spawnRow, spawnCol);
+        if (spawnTile == null) {
+            System.out.println("Cannot recall: spawn location is invalid.");
+            return false;
+        }
+
+        if (spawnTile.hasHero()) {
+            System.out.println("Cannot recall: spawn nexus is occupied by another hero.");
+            return false;
+        }
+
+        // Remove hero from current tile
+        Tile currentTile = world.getTile(currentRow, currentCol);
+        if (currentTile != null) {
+            currentTile.removeHero();
+        }
+
+        // Place hero at spawn nexus
+        spawnTile.setHero(hero, heroIdx + 1);
+        hero.setPosition(spawnRow, spawnCol);
+
+        System.out.println(hero.getName() + " recalled to their nexus at (" + spawnRow + "," + spawnCol + ")!");
+        return true; // Recall consumes turn
+    }
+
+    /** Teleport hero to a space near another hero in a different lane. */
+    private boolean attemptTeleport(Hero hero, int heroIdx) {
+        // Find heroes in other lanes
+        List<Hero> otherHeroes = new ArrayList<>();
+        for (int i = 0; i < party.size(); i++) {
+            if (i != heroIdx) {
+                Hero other = party.getHero(i);
+                // Check if in different lane (lanes are col 0-1, 3-4, 6-7)
+                int currentLane = hero.getCol() / 3;
+                int otherLane = other.getCol() / 3;
+                if (currentLane != otherLane) {
+                    otherHeroes.add(other);
+                }
+            }
+        }
+
+        if (otherHeroes.isEmpty()) {
+            System.out.println("No heroes in other lanes to teleport to.");
+            return false;
+        }
+
+        // Display hero options
+        System.out.println("\nSelect a hero to teleport near:");
+        for (int i = 0; i < otherHeroes.size(); i++) {
+            Hero other = otherHeroes.get(i);
+            System.out.println((i + 1) + ". " + other.getName() + " at (" + other.getRow() + "," + other.getCol() + ")");
+        }
+
+        int choice = InputHelper.readInt("Choice (1-" + otherHeroes.size() + "): ", 1, otherHeroes.size());
+        Hero targetHero = otherHeroes.get(choice - 1);
+
+        // Find available adjacent positions (left, right, below only - not above/forward)
+        int[][] directions = {{0, -1}, {0, 1}, {1, 0}}; // left, right, below
+        String[] directionNames = {"Left", "Right", "Below"};
+        List<int[]> validPositions = new ArrayList<>();
+        List<String> validNames = new ArrayList<>();
+
+        for (int i = 0; i < directions.length; i++) {
+            int newRow = targetHero.getRow() + directions[i][0];
+            int newCol = targetHero.getCol() + directions[i][1];
+            Tile tile = world.getTile(newRow, newCol);
+            if (tile != null && tile.isAccessible() && !tile.hasHero() && !tile.hasMonster()) {
+                validPositions.add(new int[]{newRow, newCol});
+                validNames.add(directionNames[i]);
+            }
+        }
+
+        if (validPositions.isEmpty()) {
+            System.out.println("No valid positions available near " + targetHero.getName() + ".");
+            return false;
+        }
+
+        // Display position options
+        System.out.println("\nSelect a position:");
+        for (int i = 0; i < validPositions.size(); i++) {
+            int[] pos = validPositions.get(i);
+            System.out.println((i + 1) + ". " + validNames.get(i) + " of " + targetHero.getName() + " at (" + pos[0] + "," + pos[1] + ")");
+        }
+
+        int posChoice = InputHelper.readInt("Choice (1-" + validPositions.size() + "): ", 1, validPositions.size());
+        int[] targetPos = validPositions.get(posChoice - 1);
+
+        // Remove hero from current tile
+        Tile currentTile = world.getTile(hero.getRow(), hero.getCol());
+        if (currentTile != null) {
+            currentTile.removeHero();
+        }
+
+        // Place hero at target position
+        Tile targetTile = world.getTile(targetPos[0], targetPos[1]);
+        targetTile.setHero(hero, heroIdx + 1);
+        hero.setPosition(targetPos[0], targetPos[1]);
+
+        System.out.println(hero.getName() + " teleported to (" + targetPos[0] + "," + targetPos[1] + ")!");
+        return true; // Teleport consumes turn
+    }
+
     private void placeHeroesAtBottomNexus() {
         if (party.size() == 0) {
             System.out.println("No heroes in party.");
@@ -224,6 +348,7 @@ public class LegendsOfValor extends RPG {
 
             tile.setHero(hero, i + 1);
             hero.setPosition(row, col);
+            hero.setSpawnLocation(row, col, i); // Track spawn location for recall
         }
     }
 
