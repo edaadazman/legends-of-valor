@@ -1,48 +1,59 @@
 package game;
 
 import characters.Hero;
-import characters.Party;
 import util.InputHelper;
 import world.Tile;
 import world.ValorWorld;
 
-public class ValorGameEngine {
-    private final ValorWorld world;
-    private final Party party;
+/**
+ * Legends of Valor game implementation.
+ */
+public class LegendsOfValor extends RPG {
+    private ValorWorld world;
 
-    public ValorGameEngine() {
-        this(new Party());
+    public LegendsOfValor() {
+        super();
     }
 
-    public ValorGameEngine(Party party) {
-        this.party = party;
-        this.world = new ValorWorld();
-    }
-
-    public void start() {
+    @Override
+    protected void displayWelcome() {
         System.out.println("\n===========================================");
         System.out.println("  LEGENDS OF VALOR");
         System.out.println("  Three lanes await—defend your nexus!");
         System.out.println("===========================================\n");
+    }
 
+    @Override
+    protected int getRequiredHeroCount() {
+        return 3; // Valor always uses exactly 3 heroes
+    }
+
+    @Override
+    public void start() {
+        displayWelcome();
+        setupParty();
+        world = new ValorWorld();
         placeHeroesAtBottomNexus();
 
-        boolean running = true;
-        while (running) {
+        gameLoop();
+        endGame();
+    }
+
+    @Override
+    protected void gameLoop() {
+        while (gameRunning) {
             world.display();
 
             // Heroes move in order H1 -> H3 each round
             int heroesToPlay = Math.min(3, party.size());
-            for (int heroIdx = 0; heroIdx < heroesToPlay && running; heroIdx++) {
+            for (int heroIdx = 0; heroIdx < heroesToPlay && gameRunning; heroIdx++) {
                 Hero hero = party.getHero(heroIdx);
 
                 System.out.println("\n--- H" + (heroIdx + 1) + " Turn (" + hero.getName() + ") ---");
-                System.out.println("W/A/S/D - Move");
-                System.out.println("I - Info");
-                System.out.println("Q - Quit");
+                displayControls();
 
                 boolean turnComplete = false;
-                while (!turnComplete && running) {
+                while (!turnComplete && gameRunning) {
                     char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
                     switch (cmd) {
                         case 'w':
@@ -61,7 +72,7 @@ public class ValorGameEngine {
                             hero.displayStats();
                             break;
                         case 'q':
-                            running = false;
+                            gameRunning = false;
                             break;
                         default:
                             System.out.println("Invalid command.");
@@ -72,7 +83,12 @@ public class ValorGameEngine {
         }
     }
 
-    /** Attempt a hero move; returns true only when the move succeeds. */
+    private void displayControls() {
+        System.out.println("W/A/S/D - Move");
+        System.out.println("I - Info");
+        System.out.println("Q - Quit");
+    }
+
     private boolean attemptMove(Hero hero, int dr, int dc) {
         boolean ok = world.moveHero(hero, dr, dc);
         if (!ok) {
@@ -81,16 +97,14 @@ public class ValorGameEngine {
         return ok;
     }
 
-    /** Place the three heroes on the bottom nexus (one per lane) and label them H1-H3. */
     private void placeHeroesAtBottomNexus() {
         if (party.size() == 0) {
             System.out.println("No heroes in party.");
             return;
         }
 
-        // One hero per lane (cols 0/3/6 are lane anchors; cols 2 and 5 are walls)
         int[] laneCols = { 0, 3, 6 };
-        int row = world.getSize() - 1; // bottom Nexus row in ValorWorld
+        int row = world.getSize() - 1;
 
         int heroesToPlace = Math.min(Math.min(party.size(), laneCols.length), 3);
         for (int i = 0; i < heroesToPlace; i++) {
