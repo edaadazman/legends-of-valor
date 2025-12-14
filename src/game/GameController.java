@@ -1,42 +1,39 @@
 package game;
 
-import util.InputHelper;
-
 /**
  * Main game controller that manages game selection and execution.
+ * Uses GameFactory to create game instances.
  */
 public class GameController {
     
     public void start() {
-        System.out.println("\n===========================================");
-        System.out.println("  LEGENDS GAME COLLECTION");
-        System.out.println("===========================================\n");
-
-        Game game = selectGame();
+        displayWelcomeBanner();
+        
+        Game game = GameFactory.createGameFromUserInput();
+        
         if (game != null) {
             game.start();
+        } else {
+            displayExitMessage();
         }
     }
-
-    private Game selectGame() {
-        System.out.println("Select Game Mode:");
-        System.out.println("1) Monsters and Heroes (classic)");
-        System.out.println("2) Legends of Valor (new)");
-        System.out.println("0) Exit");
-
-        int choice = InputHelper.readInt("Enter choice: ", 0, 2);
-
-        switch (choice) {
-            case 1:
-                return new MonstersAndHeroes();
-            case 2:
-                return new LegendsOfValor();
-            case 0:
-                System.out.println("Thanks for visiting! Goodbye!");
-                return null;
-            default:
-                System.out.println("Invalid choice.");
-                return null;
-        }
+    
+    /**
+     * Display the main welcome banner.
+     */
+    private void displayWelcomeBanner() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  LEGENDS GAME COLLECTION");
+        System.out.println("=".repeat(50));
+    }
+    
+    /**
+     * Display exit message when user quits.
+     */
+    private void displayExitMessage() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  Thanks for playing!");
+        System.out.println("  Goodbye!");
+        System.out.println("=".repeat(50) + "\n");
     }
 }
