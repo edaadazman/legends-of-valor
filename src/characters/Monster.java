@@ -8,6 +8,7 @@ public class Monster extends Character {
     private int baseDamage;
     private int defense;
     private double dodgeChance;
+    private int laneIndex;
 
     public Monster(String name, int level, MonsterType monsterType,
             int baseDamage, int defense, int dodgeChance) {
@@ -16,6 +17,15 @@ public class Monster extends Character {
         this.baseDamage = baseDamage;
         this.defense = (int) (defense * 0.05);
         this.dodgeChance = dodgeChance * 0.001;
+        this.laneIndex = -1;
+    }
+
+    public int getLaneIndex() {
+        return laneIndex;
+    }
+
+    public void setLaneIndex(int laneIndex) {
+        this.laneIndex = laneIndex;
     }
 
     public MonsterType getMonsterType() {
