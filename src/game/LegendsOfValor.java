@@ -57,77 +57,92 @@ public class LegendsOfValor extends RPG {
     }
 
     @Override
-    protected void gameLoop() {
-        while (gameRunning) {
-            world.display();
+protected void gameLoop() {
+    while (gameRunning) {
+        world.display();
 
-            // Heroes move in order H1 -> H3 each round
-            int heroesToPlay = Math.min(3, party.size());
-            for (int heroIdx = 0; heroIdx < heroesToPlay && gameRunning; heroIdx++) {
-                Hero hero = party.getHero(heroIdx);
+        if (battleEngine.checkHeroVictory()) {
+            gameRunning = false;
+            break;
+        }
 
+        if (battleEngine.checkMonsterVictory()) {
+            gameRunning = false;
+            break;
+        }
+
+        int heroesToPlay = Math.min(3, party.size());
+        for (int heroIdx = 0; heroIdx < heroesToPlay && gameRunning; heroIdx++) {
+            Hero hero = party.getHero(heroIdx);
+
+            boolean turnComplete = false;
+            while (!turnComplete && gameRunning) {
+                System.out.println();
                 System.out.println("\n--- H" + (heroIdx + 1) + " Turn (" + hero.getName() + ") ---");
-
-                boolean turnComplete = false;
-                while (!turnComplete && gameRunning) {
-                    displayControls(hero);
-                    char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
-                    switch (cmd) {
-                        case 'w':
-                            turnComplete = attemptMove(hero, -1, 0);
-                            break;
-                        case 's':
-                            turnComplete = attemptMove(hero, 1, 0);
-                            break;
-                        case 'a':
-                            turnComplete = attemptMove(hero, 0, -1);
-                            break;
-                        case 'd':
-                            turnComplete = attemptMove(hero, 0, 1);
-                            break;
-                        case 'f':
-                            turnComplete = attemptAttack(hero);
-                            break;
-                        case 'c':
-                            turnComplete = attemptCastSpell(hero);
-                            break;
-                        case 't':
-                            turnComplete = attemptTeleport(hero, heroIdx);
-                            break;
-                        case 'r':
-                            turnComplete = attemptRecall(hero, heroIdx);
-                            break;
-                        case 'o':
-                            turnComplete = attemptRemoveObstacle(hero);
-                            break;
-                        case 'm':
-                            attemptMarket(hero);
-                            // Market doesn't consume turn
-                            break;
-                        case 'i':
-                            hero.displayStats();
-                            break;
-                        case 'q':
-                            gameRunning = false;
-                            break;
-                        default:
-                            System.out.println("Invalid command.");
-                            break;
-                    }
-                }
-                // Display world after each hero's turn except last
-                if (gameRunning && turnComplete && heroIdx < heroesToPlay - 1) {
-                    System.out.println(); // Add blank line for readability
-                    world.display();
+                displayControls(hero);
+                char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
+                switch (cmd) {
+                    case 'w':
+                        turnComplete = attemptMove(hero, -1, 0);
+                        break;
+                    case 's':
+                        turnComplete = attemptMove(hero, 1, 0);
+                        break;
+                    case 'a':
+                        turnComplete = attemptMove(hero, 0, -1);
+                        break;
+                    case 'd':
+                        turnComplete = attemptMove(hero, 0, 1);
+                        break;
+                    case 'f':
+                        turnComplete = attemptAttack(hero);
+                        break;
+                    case 'c':
+                        turnComplete = attemptCastSpell(hero);
+                        break;
+                    case 't':
+                        turnComplete = attemptTeleport(hero, heroIdx);
+                        break;
+                    case 'r':
+                        turnComplete = attemptRecall(hero, heroIdx);
+                        break;
+                    case 'o':
+                        turnComplete = attemptRemoveObstacle(hero);
+                        break;
+                    case 'v':
+                        // Use inherited inventory management from RPG
+                        turnComplete = manageInventory(hero);
+                        break;
+                    case 'm':
+                        attemptMarket(hero);
+                        break;
+                    case 'i':
+                        hero.displayStats();
+                        break;
+                    case 'p':
+                        // Pass turn - hero does nothing
+                        turnComplete = passTurn(hero);
+                        break;
+                    case 'q':
+                        gameRunning = false;
+                        break;
+                    default:
+                        System.out.println("Invalid command.");
+                        break;
                 }
             }
-
-            // After all heroes move, monsters move down
-            if (gameRunning) {
-                moveMonsters();
+            
+            if (gameRunning && turnComplete && heroIdx < heroesToPlay - 1) {
+                System.out.println();
+                world.display();
             }
         }
+
+        if (gameRunning) {
+            moveMonsters();
+        }
     }
+}
 
     private void displayControls(Hero hero) {
         System.out.println("W/A/S/D - Move");
@@ -136,12 +151,14 @@ public class LegendsOfValor extends RPG {
         System.out.println("T - Teleport to another lane");
         System.out.println("R - Recall to Nexus");
         System.out.println("O - Remove adjacent obstacle");
+        System.out.println("V - Inventory Actions (equipment/potions)");
         // Only show Market option if hero is at a Nexus
         if (isHeroAtNexus(hero)) {
             System.out.println("M - Market (buy/sell items)");
         }
         
         System.out.println("I - Info");
+        System.out.println("P - Pass turn");
         System.out.println("Q - Quit");
     }
 
@@ -151,6 +168,11 @@ public class LegendsOfValor extends RPG {
     private boolean isHeroAtNexus(Hero hero) {
         Tile currentTile = world.getTile(hero.getRow(), hero.getCol());
         return currentTile != null && currentTile.getType() == TileType.NEXUS;
+    }
+
+    private boolean passTurn(Hero hero) {
+        System.out.println(hero.getName() + " observes the battlefield and waits...");
+        return true; // Turn consumed
     }
 
     /**
@@ -170,7 +192,7 @@ public class LegendsOfValor extends RPG {
         System.out.println("  Trading Post at the Nexus");
         System.out.println("=".repeat(50));
         
-        marketEngine.enterMarket(party);
+        marketEngine.enterMarketForHero(hero);
     }
 
     private boolean attemptMove(Hero hero, int dr, int dc) {

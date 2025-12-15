@@ -17,7 +17,47 @@ public class MarketEngine {
     }
 
     /**
-     * Open the market menu for the party.
+     * Open the market menu for a single hero (Legends of Valor).
+     * Only the specified hero can buy/sell items.
+     */
+    public void enterMarketForHero(Hero hero) {
+        boolean inMarket = true;
+
+        System.out.println("\n=== WELCOME TO THE MARKET ===");
+        System.out.println("Gold Available: " + hero.getGold());
+        System.out.println();
+
+        while (inMarket) {
+            System.out.println("\n=== MARKET MENU ===");
+            System.out.println("1) Buy Items");
+            System.out.println("2) Sell Items");
+            System.out.println("3) View Stats");
+            System.out.println("4) Leave Market");
+
+            int choice = InputHelper.readInt("", 1, 4);
+
+            switch (choice) {
+                case 1:
+                    buyItemsForHero(hero);
+                    break;
+                case 2:
+                    sellItemsForHero(hero);
+                    break;
+                case 3:
+                    hero.displayStats();
+                    break;
+                case 4:
+                    inMarket = false;
+                    break;
+            }
+        }
+
+        System.out.println("\n" + hero.getName() + " leaves the market.");
+    }
+
+    /**
+     * Open the market menu for the party (Monsters & Heroes).
+     * Allows selection of which hero to shop with.
      */
     public void enterMarket(Party party) {
         boolean inMarket = true;
@@ -52,14 +92,9 @@ public class MarketEngine {
     }
 
     /**
-     * Buy items from the market.
+     * Buy items for a specific hero (no selection needed).
      */
-    private void buyItems(Party party) {
-        Hero hero = selectHero(party);
-        if (hero == null) {
-            return;
-        }
-
+    private void buyItemsForHero(Hero hero) {
         System.out.println("\nGold Available: " + hero.getGold());
         System.out.println("\n=== Item Categories ===");
         System.out.println("1) Weapons");
@@ -86,6 +121,57 @@ public class MarketEngine {
             case 5:
                 break;
         }
+    }
+
+    /**
+     * Sell items for a specific hero (no selection needed).
+     */
+    private void sellItemsForHero(Hero hero) {
+        List<Item> items = hero.getInventory().getItems();
+
+        if (items.isEmpty()) {
+            System.out.println(hero.getName() + " has no items to sell.");
+            return;
+        }
+
+        System.out.println("\n=== " + hero.getName() + "'s Inventory ===");
+        for (int i = 0; i < items.size(); i++) {
+            System.out.println((i + 1) + ") " + items.get(i) + " | Sell Price: " + items.get(i).getSellPrice());
+        }
+
+        int choice = InputHelper.readInt("Choose item to sell or 0 to cancel\n", 0, items.size());
+        if (choice == 0) {
+            return;
+        }
+
+        Item item = items.get(choice - 1);
+        hero.getInventory().removeItem(item);
+        hero.addGold(item.getSellPrice());
+        System.out.println(hero.getName() + " sold " + item.getName() + " for " + item.getSellPrice() + " gold!");
+    }
+
+    /**
+     * Buy items from the market (with hero selection for M&H).
+     */
+    private void buyItems(Party party) {
+        Hero hero = selectHero(party);
+        if (hero == null) {
+            return;
+        }
+
+        buyItemsForHero(hero);
+    }
+
+    /**
+     * Sell items from hero's inventory (with hero selection for M&H).
+     */
+    private void sellItems(Party party) {
+        Hero hero = selectHero(party);
+        if (hero == null) {
+            return;
+        }
+
+        sellItemsForHero(hero);
     }
 
     /**
@@ -214,39 +300,7 @@ public class MarketEngine {
     }
 
     /**
-     * Sell items from hero's inventory.
-     */
-    private void sellItems(Party party) {
-        Hero hero = selectHero(party);
-        if (hero == null) {
-            return;
-        }
-
-        List<Item> items = hero.getInventory().getItems();
-
-        if (items.isEmpty()) {
-            System.out.println(hero.getName() + " has no items to sell.");
-            return;
-        }
-
-        System.out.println("\n=== " + hero.getName() + "'s Inventory ===");
-        for (int i = 0; i < items.size(); i++) {
-            System.out.println((i + 1) + ") " + items.get(i) + " | Sell Price: " + items.get(i).getSellPrice());
-        }
-
-        int choice = InputHelper.readInt("Choose item to sell or 0 to cancel\n", 0, items.size());
-        if (choice == 0) {
-            return;
-        }
-
-        Item item = items.get(choice - 1);
-        hero.getInventory().removeItem(item);
-        hero.addGold(item.getSellPrice());
-        System.out.println(hero.getName() + " sold " + item.getName() + " for " + item.getSellPrice() + " gold!");
-    }
-
-    /**
-     * Select a hero from the party.
+     * Select a hero from the party (used by Monsters & Heroes).
      */
     private Hero selectHero(Party party) {
         System.out.println("\n=== Select Hero ===");

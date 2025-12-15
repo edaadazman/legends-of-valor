@@ -78,7 +78,7 @@ public class MonstersAndHeroes extends RPG {
 
     private void handleInput() {
         char input = InputHelper.readChar("Enter command: ");
-
+    
         switch (Character.toLowerCase(input)) {
             case 'w':
                 moveParty(-1, 0);
@@ -99,7 +99,8 @@ public class MonstersAndHeroes extends RPG {
                 displayInfo();
                 break;
             case 'v':
-                manageInventory();
+                // Use inherited inventory management from RPG
+                selectHeroForInventory();
                 break;
             case 'q':
                 gameRunning = false;
@@ -107,6 +108,39 @@ public class MonstersAndHeroes extends RPG {
             default:
                 System.out.println("Invalid command!");
                 break;
+        }
+    }
+
+    /**
+     * Select a hero and manage their inventory.
+     * Uses inherited methods from RPG base class.
+     */
+    private void selectHeroForInventory() {
+        System.out.println("\n=== Inventory Management ===");
+        System.out.println("Choose hero:");
+        for (int i = 0; i < party.size(); i++) {
+            System.out.println((i + 1) + ") " + party.getHero(i).getName());
+        }
+        System.out.println("0) Back");
+
+        int heroChoice = InputHelper.readInt("", 0, party.size());
+        if (heroChoice == 0) {
+            return;
+        }
+
+        Hero hero = party.getHero(heroChoice - 1);
+
+        boolean inInventory = true;
+        while (inInventory) {
+            // Use inherited manageInventory method
+            // In M&H, inventory actions don't consume turns
+            manageInventory(hero);
+            
+            // Ask if they want to continue managing inventory
+            String continueChoice = InputHelper.readString("\nContinue managing inventory? (y/n): ");
+            if (!continueChoice.equalsIgnoreCase("y")) {
+                inInventory = false;
+            }
         }
     }
 
@@ -143,174 +177,5 @@ public class MonstersAndHeroes extends RPG {
         }
 
         marketEngine.enterMarket(party);
-    }
-
-    private void manageInventory() {
-        System.out.println("\n=== Inventory Management ===");
-        System.out.println("Choose hero:");
-        for (int i = 0; i < party.size(); i++) {
-            System.out.println((i + 1) + ") " + party.getHero(i).getName());
-        }
-        System.out.println("0) Back");
-
-        int heroChoice = InputHelper.readInt("", 0, party.size());
-        if (heroChoice == 0) {
-            return;
-        }
-
-        Hero hero = party.getHero(heroChoice - 1);
-
-        boolean inInventory = true;
-        while (inInventory) {
-            System.out.println("\n=== " + hero.getName() + "'s Inventory ===");
-            System.out.println("1) Equip Weapon");
-            System.out.println("2) Equip Armor");
-            System.out.println("3) Use Potion");
-            System.out.println("4) View Inventory");
-            System.out.println("5) Back");
-
-            int choice = InputHelper.readInt("", 1, 5);
-
-            switch (choice) {
-                case 1:
-                    equipWeaponOutsideBattle(hero);
-                    break;
-                case 2:
-                    equipArmorOutsideBattle(hero);
-                    break;
-                case 3:
-                    usePotionOutsideBattle(hero);
-                    break;
-                case 4:
-                    viewInventory(hero);
-                    break;
-                case 5:
-                    inInventory = false;
-                    break;
-            }
-        }
-    }
-
-    private void equipWeaponOutsideBattle(Hero hero) {
-        List<Weapon> weapons = hero.getInventory().getWeapons();
-
-        if (weapons.isEmpty()) {
-            System.out.println("No weapons in inventory.");
-            return;
-        }
-
-        System.out.println("\nWeapons:");
-        for (int i = 0; i < weapons.size(); i++) {
-            System.out.println((i + 1) + ") " + weapons.get(i));
-        }
-        System.out.println("0) Cancel");
-
-        int choice = InputHelper.readInt("Choose weapon: ", 0, weapons.size());
-        if (choice == 0) {
-            return;
-        }
-
-        Weapon weapon = weapons.get(choice - 1);
-        hero.getInventory().removeItem(weapon);
-        hero.equipWeapon(weapon);
-        System.out.println(hero.getName() + " equipped " + weapon.getName() + ".");
-    }
-
-    private void equipArmorOutsideBattle(Hero hero) {
-        List<Armor> armors = hero.getInventory().getArmor();
-
-        if (armors.isEmpty()) {
-            System.out.println("No armor in inventory.");
-            return;
-        }
-
-        System.out.println("\nArmor:");
-        for (int i = 0; i < armors.size(); i++) {
-            System.out.println((i + 1) + ") " + armors.get(i));
-        }
-        System.out.println("0) Cancel");
-
-        int choice = InputHelper.readInt("Choose armor: ", 0, armors.size());
-        if (choice == 0) {
-            return;
-        }
-
-        Armor armor = armors.get(choice - 1);
-        hero.getInventory().removeItem(armor);
-        hero.equipArmor(armor);
-        System.out.println(hero.getName() + " equipped " + armor.getName() + ".");
-    }
-
-    private void usePotionOutsideBattle(Hero hero) {
-        List<Potion> potions = hero.getInventory().getPotions();
-
-        if (potions.isEmpty()) {
-            System.out.println("No potions in inventory.");
-            return;
-        }
-
-        System.out.println("\nPotions:");
-        for (int i = 0; i < potions.size(); i++) {
-            System.out.println((i + 1) + ") " + potions.get(i));
-        }
-        System.out.println("0) Cancel");
-
-        int choice = InputHelper.readInt("Choose potion: ", 0, potions.size());
-        if (choice == 0) {
-            return;
-        }
-
-        Potion potion = potions.get(choice - 1);
-        potion.applyEffect(hero);
-        hero.getInventory().removeItem(potion);
-    }
-
-    private void viewInventory(Hero hero) {
-        System.out.println("\n=== " + hero.getName() + "'s Full Inventory ===");
-
-        List<Weapon> weapons = hero.getInventory().getWeapons();
-        List<Armor> armors = hero.getInventory().getArmor();
-        List<Potion> potions = hero.getInventory().getPotions();
-        List<Spell> spells = hero.getInventory().getSpells();
-
-        System.out.println("\nWeapons:");
-        if (weapons.isEmpty()) {
-            System.out.println("  None");
-        } else {
-            for (Weapon w : weapons) {
-                System.out.println("  - " + w);
-            }
-        }
-
-        System.out.println("\nArmor:");
-        if (armors.isEmpty()) {
-            System.out.println("  None");
-        } else {
-            for (Armor a : armors) {
-                System.out.println("  - " + a);
-            }
-        }
-
-        System.out.println("\nPotions:");
-        if (potions.isEmpty()) {
-            System.out.println("  None");
-        } else {
-            for (Potion p : potions) {
-                System.out.println("  - " + p);
-            }
-        }
-
-        System.out.println("\nSpells:");
-        if (spells.isEmpty()) {
-            System.out.println("  None");
-        } else {
-            for (Spell s : spells) {
-                System.out.println("  - " + s);
-            }
-        }
-
-        System.out.println("\nCurrently Equipped:");
-        System.out.println("  Weapon: " + (hero.getEquippedWeapon() != null ? hero.getEquippedWeapon().getName() : "None"));
-        System.out.println("  Armor: " + (hero.getEquippedArmor() != null ? hero.getEquippedArmor().getName() : "None"));
     }
 }
