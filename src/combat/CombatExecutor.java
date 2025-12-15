@@ -111,23 +111,25 @@ public class CombatExecutor {
     }
 
     /**
-     * Handle monster defeat - give rewards to hero.
+     * Handle monster defeat - give rewards to ALL living heroes.
      */
     private void handleMonsterDefeat(Character attacker, Monster monster) {
         System.out.println(monster.getName() + " has been defeated!");
 
-        // Only give rewards if attacker is a hero
-        if (attacker instanceof Hero) {
-            Hero hero = (Hero) attacker;
-            
-            // Award gold and experience
-            int goldReward = monster.getLevel() * 100;
-            int expReward = monster.getLevel() * 2;
+        // Award gold and experience to ALL living heroes
+        int goldReward = monster.getLevel() * 100;
+        int expReward = monster.getLevel() * 2;
 
-            hero.addGold(goldReward);
-            hero.addExperience(expReward);
-
-            System.out.println(hero.getName() + " gained " + goldReward + " gold and " + expReward + " XP!");
+        if (party != null) {
+            System.out.println("\n--- Rewards Distributed ---");
+            for (Hero hero : party.getHeroes()) {
+                if (hero.isAlive()) {
+                    hero.addGold(goldReward);
+                    hero.addExperience(expReward);
+                    System.out.println(hero.getName() + " gained " + goldReward + 
+                        " gold and " + expReward + " XP!");
+                }
+            }
         }
 
         // Remove monster from tile

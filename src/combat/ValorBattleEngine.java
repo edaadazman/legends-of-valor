@@ -75,20 +75,139 @@ public class ValorBattleEngine extends BattleEngine {
     }
 
     /**
-     * Execute monster turn - attack if hero in range, otherwise move south.
-     */
-    public void executeMonsterTurn(Monster monster) {
-        List<Hero> heroesInRange = getHeroesInRange(monster);
+ * Execute monster turn - prioritize advancing to Nexus over attacking.
+ * Only attack if hero is directly blocking forward progress.
+ */
+public void executeMonsterTurn(Monster monster) {
+    if (monster.isFainted()) {
+        return;
+    }
 
-        if (!heroesInRange.isEmpty()) {
-            Hero target = heroesInRange.get(random.nextInt(heroesInRange.size()));
-            monsterAttack(monster, target);
-        } else {
-            boolean moved = ((ValorWorld)world).moveMonster(monster);
-            if (moved) {
-                System.out.println(monster.getName() + " advances south.");
+    // Get monster ID from its current tile
+    Tile currentTile = world.getTile(monster.getRow(), monster.getCol());
+    int monsterId = currentTile != null ? currentTile.getMonsterId() : 0;
+
+    // First, try to move forward toward Hero Nexus
+    boolean canMoveForward = canMonsterMoveForward(monster);
+    
+    if (canMoveForward) {
+        // No hero blocking forward - advance toward Nexus
+        boolean moved = ((ValorWorld)world).moveMonster(monster);
+        if (moved) {
+            System.out.println("M" + monsterId + ": " + monster.getName() + 
+                " advances south toward the Hero Nexus!");
+            
+            // Check if monster reached hero Nexus (win condition)
+            if (monster.getRow() == ((ValorWorld)world).getSize() - 1) {
+                Tile tile = world.getTile(monster.getRow(), monster.getCol());
+                if (tile != null && tile.getType() == TileType.NEXUS) {
+                    System.out.println("\n⚠️  M" + monsterId + ": " + monster.getName() + 
+                        " has breached the Hero Nexus!");
+                }
             }
+        } else {
+            // Movement failed (obstacle?) - try to attack if heroes nearby
+            attemptMonsterCombat(monster, monsterId);
         }
+    } else {
+        // Hero is blocking forward progress - must fight through them
+        List<Hero> heroesInRange = getHeroesInRange(monster);
+        
+        if (!heroesInRange.isEmpty()) {
+            // Filter to only heroes directly blocking forward movement
+            List<Hero> blockingHeroes = new ArrayList<>();
+            for (Hero hero : heroesInRange) {
+                if (isHeroBlockingPath(monster, hero)) {
+                    blockingHeroes.add(hero);
+                }
+            }
+            
+            if (!blockingHeroes.isEmpty()) {
+                // Attack a blocking hero
+                Hero target = blockingHeroes.get(random.nextInt(blockingHeroes.size()));
+                
+                // Get hero ID
+                Tile heroTile = world.getTile(target.getRow(), target.getCol());
+                int heroId = heroTile != null ? heroTile.getHeroId() : 0;
+                
+                System.out.println("M" + monsterId + ": " + monster.getName() + 
+                    " must fight through H" + heroId + " (" + target.getName() + ")!");
+                monsterAttack(monster, target);
+            } else {
+                // Heroes nearby but not blocking - try to move anyway
+                boolean moved = ((ValorWorld)world).moveMonster(monster);
+                if (!moved) {
+                    // Can't move, attack anyway
+                    attemptMonsterCombat(monster, monsterId);
+                } else {
+                    System.out.println("M" + monsterId + ": " + monster.getName() + " advances south.");
+                }
+            }
+        } else {
+            // No heroes in range but can't move forward - stuck
+            System.out.println("M" + monsterId + ": " + monster.getName() + 
+                " is stuck and cannot advance.");
+        }
+    }
+}
+
+/**
+ * Attempt monster combat if movement failed.
+ */
+private void attemptMonsterCombat(Monster monster, int monsterId) {
+    List<Hero> heroesInRange = getHeroesInRange(monster);
+    if (!heroesInRange.isEmpty()) {
+        Hero target = heroesInRange.get(random.nextInt(heroesInRange.size()));
+        monsterAttack(monster, target);
+    }
+}
+
+    /**
+     * Check if monster can move forward without being blocked.
+     * Returns true if the forward path is clear.
+     */
+    private boolean canMonsterMoveForward(Monster monster) {
+        int nextRow = monster.getRow() + 1; // Moving south (toward hero nexus)
+        int col = monster.getCol();
+        
+        // Check if next tile exists and is accessible
+        Tile nextTile = world.getTile(nextRow, col);
+        if (nextTile == null || (!nextTile.isAccessible() && !nextTile.isObstacle())) {
+            return false;
+        }
+        
+        // Check if hero is in the same row in the lane (blocking sideways)
+        int laneIndex = col / 3;
+        int laneCol1 = laneIndex * 3;
+        int laneCol2 = laneIndex * 3 + 1;
+        
+        // Check both columns of the lane at current row
+        Tile tile1 = world.getTile(monster.getRow(), laneCol1);
+        Tile tile2 = world.getTile(monster.getRow(), laneCol2);
+        
+        if ((tile1 != null && tile1.hasHero()) || (tile2 != null && tile2.hasHero())) {
+            return false; // Hero is blocking at current row level
+        }
+        
+        return true;
+    }
+
+    /**
+     * Check if a hero is directly blocking the monster's path forward.
+     * Returns true if hero must be fought before advancing.
+     */
+    private boolean isHeroBlockingPath(Monster monster, Hero hero) {
+        // Hero must be in same lane
+        int monsterLane = monster.getCol() / 3;
+        int heroLane = hero.getCol() / 3;
+        
+        if (monsterLane != heroLane) {
+            return false;
+        }
+        
+        // Hero must be at same row or directly ahead (next row)
+        int rowDiff = hero.getRow() - monster.getRow();
+        return rowDiff >= 0 && rowDiff <= 1;
     }
 
     /**
@@ -99,9 +218,11 @@ public class ValorBattleEngine extends BattleEngine {
             if (hero.isAlive() && hero.getRow() == 0) {
                 Tile tile = world.getTile(hero.getRow(), hero.getCol());
                 if (tile != null && tile.getType() == TileType.NEXUS) {
-                    System.out.println("\n=== VICTORY! ===");
-                    System.out.println(hero.getName() + " has reached the Monster Nexus!");
-                    System.out.println("The heroes have won the battle!");
+                    System.out.println("\n" + "=".repeat(70));
+                    System.out.println("   VICTORY! ");
+                    System.out.println("  " + hero.getName() + " has reached the Monster Nexus!");
+                    System.out.println("  The heroes have won the battle!");
+                    System.out.println("=".repeat(70));
                     return true;
                 }
             }
@@ -113,13 +234,17 @@ public class ValorBattleEngine extends BattleEngine {
      * Check if a monster has reached the hero Nexus (lose condition).
      */
     public boolean checkMonsterVictory() {
+        int heroNexusRow = ((ValorWorld)world).getSize() - 1;
+        
         for (Monster monster : monsters) {
-            if (monster.isAlive() && monster.getRow() == ((ValorWorld)world).getSize() - 1) {
+            if (monster.isAlive() && monster.getRow() == heroNexusRow) {
                 Tile tile = world.getTile(monster.getRow(), monster.getCol());
                 if (tile != null && tile.getType() == TileType.NEXUS) {
-                    System.out.println("\n=== DEFEAT! ===");
-                    System.out.println(monster.getName() + " has reached the Hero Nexus!");
-                    System.out.println("The monsters have won. Game Over!");
+                    System.out.println("\n" + "=".repeat(70));
+                    System.out.println("    DEFEAT! ");
+                    System.out.println("  " + monster.getName() + " has reached the Hero Nexus!");
+                    System.out.println("  The monsters have won. Game Over!");
+                    System.out.println("=".repeat(70));
                     return true;
                 }
             }

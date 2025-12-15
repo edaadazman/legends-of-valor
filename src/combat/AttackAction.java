@@ -24,22 +24,51 @@ public class AttackAction implements CombatAction {
 
     @Override
     public boolean execute(Character attacker, Character defender) {
+        // Get character IDs from tiles
+        String attackerId = getCharacterId(attacker);
+        String defenderId = getCharacterId(defender);
+        
         // Check dodge
         if (random.nextDouble() < getEffectiveDodgeChance(defender)) {
-            System.out.println(defender.getName() + " dodged " + attacker.getName() + "'s attack!");
+            System.out.println(defenderId + ": " + defender.getName() + " dodged " + 
+                attackerId + ": " + attacker.getName() + "'s attack!");
             return true;
         }
-
+    
         // Calculate damage
         int damage = calculateDamage(attacker);
         damage = Math.max(1, damage - getDefense(defender));
-
+    
         // Apply damage
         defender.takeDamage(damage);
-        System.out.println(attacker.getName() + " attacks " + defender.getName() + 
-            " for " + damage + " damage!");
-
+        System.out.println(attackerId + ": " + attacker.getName() + " attacks " + 
+            defenderId + ": " + defender.getName() + " for " + damage + " damage!");
+    
         return true;
+    }
+    
+    /**
+     * Get character ID string (H1, H2, M1, M2, etc.)
+     */
+    private String getCharacterId(Character character) {
+        if (world == null) {
+            return "";
+        }
+        
+        Tile tile = world.getTile(character.getRow(), character.getCol());
+        if (tile == null) {
+            return "";
+        }
+        
+        if (character instanceof Hero) {
+            int id = tile.getHeroId();
+            return id > 0 ? "H" + id : "H";
+        } else if (character instanceof Monster) {
+            int id = tile.getMonsterId();
+            return id > 0 ? "M" + id : "M";
+        }
+        
+        return "";
     }
 
     @Override

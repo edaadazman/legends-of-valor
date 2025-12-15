@@ -21,12 +21,12 @@ public class LegendsOfValor extends RPG {
     private ValorWorld world;
     private ValorBattleEngine battleEngine;
     private final List<Monster> monsters;
-    private final Random random;
+    private int roundCounter;
 
     public LegendsOfValor() {
         super();
         this.monsters = new ArrayList<>();
-        this.random = new Random();
+        this.roundCounter = 0;
     }
 
     @Override
@@ -57,92 +57,147 @@ public class LegendsOfValor extends RPG {
     }
 
     @Override
-protected void gameLoop() {
-    while (gameRunning) {
-        world.display();
+    protected void gameLoop() {
+        while (gameRunning) {
+            // Display round number at the start of each round
+            System.out.println("\n" + "=".repeat(70));
+            System.out.println("  ROUND " + (roundCounter + 1));
+            System.out.println("=".repeat(70));
 
-        if (battleEngine.checkHeroVictory()) {
-            gameRunning = false;
-            break;
-        }
+            world.display();
 
-        if (battleEngine.checkMonsterVictory()) {
-            gameRunning = false;
-            break;
-        }
+            if (battleEngine.checkHeroVictory()) {
+                gameRunning = false;
+                break;
+            }
 
-        int heroesToPlay = Math.min(3, party.size());
-        for (int heroIdx = 0; heroIdx < heroesToPlay && gameRunning; heroIdx++) {
-            Hero hero = party.getHero(heroIdx);
+            if (battleEngine.checkMonsterVictory()) {
+                gameRunning = false;
+                break;
+            }
 
-            boolean turnComplete = false;
-            while (!turnComplete && gameRunning) {
-                System.out.println();
-                System.out.println("\n--- H" + (heroIdx + 1) + " Turn (" + hero.getName() + ") ---");
-                displayControls(hero);
-                char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
-                switch (cmd) {
-                    case 'w':
-                        turnComplete = attemptMove(hero, -1, 0);
-                        break;
-                    case 's':
-                        turnComplete = attemptMove(hero, 1, 0);
-                        break;
-                    case 'a':
-                        turnComplete = attemptMove(hero, 0, -1);
-                        break;
-                    case 'd':
-                        turnComplete = attemptMove(hero, 0, 1);
-                        break;
-                    case 'f':
-                        turnComplete = attemptAttack(hero);
-                        break;
-                    case 'c':
-                        turnComplete = attemptCastSpell(hero);
-                        break;
-                    case 't':
-                        turnComplete = attemptTeleport(hero, heroIdx);
-                        break;
-                    case 'r':
-                        turnComplete = attemptRecall(hero, heroIdx);
-                        break;
-                    case 'o':
-                        turnComplete = attemptRemoveObstacle(hero);
-                        break;
-                    case 'v':
-                        // Use inherited inventory management from RPG
-                        turnComplete = manageInventory(hero);
-                        break;
-                    case 'm':
-                        attemptMarket(hero);
-                        break;
-                    case 'i':
-                        hero.displayStats();
-                        break;
-                    case 'p':
-                        // Pass turn - hero does nothing
-                        turnComplete = passTurn(hero);
-                        break;
-                    case 'q':
-                        gameRunning = false;
-                        break;
-                    default:
-                        System.out.println("Invalid command.");
-                        break;
+            int heroesToPlay = Math.min(3, party.size());
+            for (int heroIdx = 0; heroIdx < heroesToPlay && gameRunning; heroIdx++) {
+                Hero hero = party.getHero(heroIdx);
+
+                boolean turnComplete = false;
+                while (!turnComplete && gameRunning) {
+                    System.out.println();
+                    System.out.println("\n--- H" + (heroIdx + 1) + " Turn (" + hero.getName() + ") ---");
+                    displayControls(hero);
+                    char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
+                    switch (cmd) {
+                        case 'w':
+                            turnComplete = attemptMove(hero, -1, 0);
+                            break;
+                        case 's':
+                            turnComplete = attemptMove(hero, 1, 0);
+                            break;
+                        case 'a':
+                            turnComplete = attemptMove(hero, 0, -1);
+                            break;
+                        case 'd':
+                            turnComplete = attemptMove(hero, 0, 1);
+                            break;
+                        case 'f':
+                            turnComplete = attemptAttack(hero);
+                            break;
+                        case 'c':
+                            turnComplete = attemptCastSpell(hero);
+                            break;
+                        case 't':
+                            turnComplete = attemptTeleport(hero, heroIdx);
+                            break;
+                        case 'r':
+                            turnComplete = attemptRecall(hero, heroIdx);
+                            break;
+                        case 'o':
+                            turnComplete = attemptRemoveObstacle(hero);
+                            break;
+                        case 'v':
+                            // Use inherited inventory management from RPG
+                            turnComplete = manageInventory(hero);
+                            break;
+                        case 'm':
+                            attemptMarket(hero);
+                            world.display();
+                            break;
+                        case 'i':
+                            displayBattleInfo();
+                            world.display();
+                            break;
+                        case 'p':
+                            // Pass turn - hero does nothing
+                            turnComplete = passTurn(hero);
+                            break;
+                        case 'q':
+                            gameRunning = false;
+                            break;
+                        default:
+                            System.out.println("Invalid command.");
+                            break;
+                    }
+                }
+                
+                if (gameRunning && turnComplete && heroIdx < heroesToPlay - 1) {
+                    System.out.println();
+                    world.display();
                 }
             }
-            
-            if (gameRunning && turnComplete && heroIdx < heroesToPlay - 1) {
+
+            // After all heroes move, monsters move
+            if (gameRunning) {
+                moveMonsters();
+            }
+
+            // End of round - heroes recover HP and Mana
+            if (gameRunning) {
+                recoverHeroes();
+            }
+
+            // Increment round counter and check for monster spawning
+            if (gameRunning) {
+                roundCounter++;
+                if (roundCounter % 8 == 0) {
+                    spawnNewMonsters();
+                }
+            }
+        }
+    }
+
+    /**
+     * Display comprehensive battle information for all heroes and monsters.
+     */
+    private void displayBattleInfo() {
+        System.out.println("\n" + "=".repeat(70));
+        System.out.println("  BATTLE STATUS");
+        System.out.println("=".repeat(70));
+
+        // Display all heroes
+        System.out.println("\n=== YOUR HEROES ===");
+        for (int i = 0; i < party.size(); i++) {
+            Hero hero = party.getHero(i);
+            System.out.print("[H" + (i + 1) + "] ");
+            hero.displayStats();
+            System.out.println();
+        }
+
+        // Display all monsters
+        System.out.println("\n=== ENEMY MONSTERS ===");
+        if (monsters.isEmpty()) {
+            System.out.println("No monsters remain on the battlefield!");
+        } else {
+            for (int i = 0; i < monsters.size(); i++) {
+                Monster monster = monsters.get(i);
+                System.out.print("[M" + (i + 1) + "] ");
+                monster.displayStats();
                 System.out.println();
-                world.display();
             }
         }
 
-        if (gameRunning) {
-            moveMonsters();
-        }
+        System.out.println("=".repeat(70));
     }
-}
+
 
     private void displayControls(Hero hero) {
         System.out.println("W/A/S/D - Move");
@@ -163,6 +218,107 @@ protected void gameLoop() {
     }
 
     /**
+     * Spawn 3 new monsters (one per lane) at the top nexus.
+     * Monsters are leveled to match the highest level hero.
+     * Called every 8 rounds.
+     */
+    private void spawnNewMonsters() {
+        System.out.println("\n" + "=".repeat(70));
+        System.out.println("    REINFORCEMENTS ARRIVING! ");
+        System.out.println("  Enemy forces are spawning at the Monster Nexus!");
+        System.out.println("=".repeat(70));
+
+        GameDatabase db = GameDatabase.getInstance();
+        int highestHeroLevel = party.getHighestLevel();
+        
+        int[] laneCols = {1, 4, 7}; // Monster spawn columns
+        int row = 0; // Top nexus row
+
+        int spawned = 0;
+        for (int i = 0; i < 3; i++) {
+            Tile tile = world.getTile(row, laneCols[i]);
+            
+            // Only spawn if the tile is empty (no monster already there)
+            if (tile != null && !tile.hasMonster() && tile.isAccessible()) {
+                // Get random monster template
+                Monster template = db.getRandomMonster();
+                if (template == null) {
+                    System.out.println("Could not create monster for lane " + (i + 1) + ".");
+                    continue;
+                }
+
+                // Create monster at hero level
+                Monster monster = new Monster(
+                    template.getName(),
+                    highestHeroLevel,
+                    template.getMonsterType(),
+                    template.getBaseDamage(),
+                    template.getDefense(),
+                    (int) (template.getDodgeChance() * 100)
+                );
+
+                // Find next available monster ID
+                int monsterId = monsters.size() + 1;
+
+                // Place monster on tile
+                tile.setMonster(monster, monsterId);
+                monster.setPosition(row, laneCols[i]);
+                monster.setLaneIndex(i);
+                monsters.add(monster);
+
+                System.out.println("M" + monsterId + ": " + monster.getName() + 
+                    " (Level " + monster.getLevel() + " " + monster.getMonsterType() + 
+                    ") spawned in lane " + (i + 1) + "!");
+                spawned++;
+            } else {
+                System.out.println("Lane " + (i + 1) + " spawn blocked - monster already present!");
+            }
+        }
+
+        if (spawned > 0) {
+            System.out.println("\n" + spawned + " new monster(s) have joined the battle!");
+            System.out.println("Defend your nexus!\n");
+        } else {
+            System.out.println("\nAll spawn points are blocked! No new monsters spawned.\n");
+        }
+    }
+
+    /**
+     * Heroes recover HP and Mana at the end of each round.
+     */
+    private void recoverHeroes() {
+        System.out.println("\n--- End of Round Recovery ---");
+        
+        boolean anyRecovery = false;
+        for (Hero hero : party.getHeroes()) {
+            if (hero.isAlive()) {
+                int oldHp = hero.getHp();
+                int oldMana = hero.getMana();
+                
+                hero.recover();
+                
+                int hpGained = hero.getHp() - oldHp;
+                int manaGained = hero.getMana() - oldMana;
+                
+                if (hpGained > 0 || manaGained > 0) {
+                    System.out.println(hero.getName() + " recovers:");
+                    if (hpGained > 0) {
+                        System.out.println("  HP: +" + hpGained + " (" + hero.getHp() + "/" + hero.getMaxHp() + ")");
+                    }
+                    if (manaGained > 0) {
+                        System.out.println("  MP: +" + manaGained + " (" + hero.getMana() + "/" + hero.getMaxMana() + ")");
+                    }
+                    anyRecovery = true;
+                }
+            }
+        }
+        
+        if (!anyRecovery) {
+            System.out.println("All heroes are at full health and mana!");
+        }
+    }
+
+    /**
      * Check if hero is currently at a Nexus tile.
      */
     private boolean isHeroAtNexus(Hero hero) {
@@ -171,7 +327,12 @@ protected void gameLoop() {
     }
 
     private boolean passTurn(Hero hero) {
-        System.out.println(hero.getName() + " observes the battlefield and waits...");
+        // Get hero ID
+        Tile tile = world.getTile(hero.getRow(), hero.getCol());
+        int heroId = tile != null ? tile.getHeroId() : 0;
+        
+        System.out.println("H" + heroId + ": " + hero.getName() + 
+            " observes the battlefield and waits...");
         return true; // Turn consumed
     }
 
@@ -196,22 +357,26 @@ protected void gameLoop() {
     }
 
     private boolean attemptMove(Hero hero, int dr, int dc) {
+        // Get hero ID before moving
+        Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
+        int heroId = oldTile != null ? oldTile.getHeroId() : 0;
         
         // If trying to move forward (up), check if we're trying to move PAST a monster in our lane
-        // Lanes are: 0-1, 3-4, 6-7 (2-column wide)
         if (dr == -1 && dc == 0) { // Moving up (forward)
             // Determine which lane the hero is in
             int laneStartCol = (hero.getCol() / 3) * 3; // 0, 3, or 6
             int laneEndCol = laneStartCol + 1;
             
             // Check if there's a monster at the same row in another column of this lane
-            // (trying to sidestep past a monster)
             for (int checkCol = laneStartCol; checkCol <= laneEndCol; checkCol++) {
-                if (checkCol == hero.getCol()) continue; // Skip our own column
+                if (checkCol == hero.getCol()) continue;
                 
                 Tile sameLevelTile = world.getTile(hero.getRow(), checkCol);
                 if (sameLevelTile != null && sameLevelTile.hasMonster()) {
-                    System.out.println("Cannot move past monster " + sameLevelTile.getMonster().getName() + " in your lane!");
+                    Monster monster = sameLevelTile.getMonster();
+                    int monsterId = sameLevelTile.getMonsterId();
+                    System.out.println("H" + heroId + ": Cannot move past M" + monsterId + 
+                        " (" + monster.getName() + ") in your lane!");
                     System.out.println("You must engage it first.");
                     return false;
                 }
@@ -220,16 +385,17 @@ protected void gameLoop() {
         
         boolean ok = world.moveHero(hero, dr, dc);
         if (!ok) {
-            System.out.println("Move blocked.");
+            System.out.println("H" + heroId + ": Move blocked.");
         } else {
             // Check if hero reached the top nexus (row 0)
             if (hero.getRow() == 0) {
                 world.display();
                 System.out.println("\n" + "=".repeat(50));
-                System.out.println("VICTORY! " + hero.getName() + " has reached the enemy nexus!");
+                System.out.println(" VICTORY! H" + heroId + ": " + hero.getName() + 
+                    " has reached the enemy nexus!");
                 System.out.println("The heroes have won the battle!");
                 System.out.println("=".repeat(50) + "\n");
-                System.exit(0);
+                gameRunning = false;
             }
         }
         return ok;
@@ -265,8 +431,8 @@ protected void gameLoop() {
     }
 
     /**
-     * Hero attacks a monster using unified combat system.
-     * Player selects target by 8-directional input (N, E, S, W, NE, SE, SW, NW).
+     * Hero attacks a monster using list-based target selection.
+     * Displays all monsters in range with ID, Name, HP, and Level.
      */
     private boolean attemptAttack(Hero hero) {
         List<Monster> monstersInRange = battleEngine.getMonstersInRange(hero);
@@ -277,34 +443,34 @@ protected void gameLoop() {
             return false;
         }
 
-        // Get direction from player
-        String dirInput = InputHelper.readString("Attack direction (N/E/S/W/NE/SE/SW/NW): ");
-        
-        int[] delta = parseDirection(dirInput);
-        if (delta == null) {
-            System.out.println("Invalid attack direction.");
+        // Display available targets
+        System.out.println("\n=== Monsters in Range ===");
+        for (int i = 0; i < monstersInRange.size(); i++) {
+            Monster m = monstersInRange.get(i);
+            
+            // Get monster ID from tile
+            Tile tile = world.getTile(m.getRow(), m.getCol());
+            int monsterId = tile != null ? tile.getMonsterId() : 0;
+            
+            System.out.println((i + 1) + ") M" + monsterId + ": " + m.getName() + 
+                " | HP: " + m.getHp() + 
+                " | Level: " + m.getLevel() +
+                " | Position: (" + m.getRow() + "," + m.getCol() + ")");
+        }
+        System.out.println("0) Cancel");
+
+        int choice = InputHelper.readInt("Select target: ", 0, monstersInRange.size());
+        if (choice == 0) {
             return false;
         }
 
-        int targetRow = hero.getRow() + delta[0];
-        int targetCol = hero.getCol() + delta[1];
-
-        // Validate target tile
-        Tile targetTile = world.getTile(targetRow, targetCol);
-        if (targetTile == null || !targetTile.hasMonster()) {
-            System.out.println("No monster in that direction.");
-            return false;
-        }
-
-        Monster monster = targetTile.getMonster();
-
-        // Use unified combat system (AttackAction with terrain bonuses)
-        return battleEngine.heroAttack(hero, monster);
+        Monster target = monstersInRange.get(choice - 1);
+        return battleEngine.heroAttack(hero, target);
     }
 
     /**
-     * Hero casts spell on a monster using unified combat system.
-     * Player selects spell, then target by 8-directional input (N, E, S, W, NE, SE, SW, NW).
+     * Hero casts spell on a monster using list-based target selection.
+     * Player selects spell first, then target from list.
      */
     private boolean attemptCastSpell(Hero hero) {
         List<Monster> monstersInRange = battleEngine.getMonstersInRange(hero);
@@ -322,11 +488,13 @@ protected void gameLoop() {
             return false;
         }
 
-        System.out.println("\nAvailable Spells:");
+        System.out.println("\n=== Available Spells ===");
         for (int i = 0; i < spells.size(); i++) {
             Spell s = spells.get(i);
-            System.out.println((i + 1) + ") " + s.getName() + " | Damage: " + s.getDamage() +
-                    " | Mana: " + s.getManaCost() + " | Type: " + s.getSpellType());
+            System.out.println((i + 1) + ") " + s.getName() + 
+                " | Damage: " + s.getDamage() +
+                " | Mana: " + s.getManaCost() + 
+                " | Type: " + s.getSpellType());
         }
         System.out.println("0) Cancel");
 
@@ -337,36 +505,36 @@ protected void gameLoop() {
 
         Spell spell = spells.get(spellChoice - 1);
 
-        // Check mana before asking for direction
+        // Check mana before showing targets
         if (hero.getMana() < spell.getManaCost()) {
             System.out.println("Insufficient mana! Need " + spell.getManaCost() + 
                 " MP, have " + hero.getMana() + " MP.");
             return false;
         }
 
-        // Then get direction for target
-        String dirInput = InputHelper.readString("Attack direction (N/E/S/W/NE/SE/SW/NW): ");
-        
-        int[] delta = parseDirection(dirInput);
-        if (delta == null) {
-            System.out.println("Invalid target direction.");
+        // Display available targets
+        System.out.println("\n=== Monsters in Range ===");
+        for (int i = 0; i < monstersInRange.size(); i++) {
+            Monster m = monstersInRange.get(i);
+            
+            // Get monster ID from tile
+            Tile tile = world.getTile(m.getRow(), m.getCol());
+            int monsterId = tile != null ? tile.getMonsterId() : 0;
+            
+            System.out.println((i + 1) + ") M" + monsterId + ": " + m.getName() + 
+                " | HP: " + m.getHp() + 
+                " | Level: " + m.getLevel() +
+                " | Position: (" + m.getRow() + "," + m.getCol() + ")");
+        }
+        System.out.println("0) Cancel");
+
+        int choice = InputHelper.readInt("Select target: ", 0, monstersInRange.size());
+        if (choice == 0) {
             return false;
         }
 
-        int targetRow = hero.getRow() + delta[0];
-        int targetCol = hero.getCol() + delta[1];
-
-        // Validate target tile
-        Tile targetTile = world.getTile(targetRow, targetCol);
-        if (targetTile == null || !targetTile.hasMonster()) {
-            System.out.println("No monster in that direction.");
-            return false;
-        }
-
-        Monster monster = targetTile.getMonster();
-
-        // Use unified combat system (SpellAction with terrain bonuses)
-        return battleEngine.heroCastSpell(hero, spell, monster);
+        Monster target = monstersInRange.get(choice - 1);
+        return battleEngine.heroCastSpell(hero, spell, target);
     }
 
     /** Recall hero back to their spawn nexus. */
