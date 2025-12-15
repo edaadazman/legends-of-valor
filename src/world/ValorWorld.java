@@ -6,6 +6,7 @@ public class ValorWorld extends World{
     private static final double BUSH_RATIO = 0.20;
     private static final double CAVE_RATIO = 0.20;
     private static final double KOULOU_RATIO = 0.20;
+    private static final double OBSTACLE_RATIO = 0.10;
 
 
     public ValorWorld() {
@@ -20,6 +21,7 @@ public class ValorWorld extends World{
         int bush = (int) (total * BUSH_RATIO);
         int cave = (int) (total * CAVE_RATIO);
         int koulou = (int) (total * KOULOU_RATIO);
+        int obstacle = (int) (total * OBSTACLE_RATIO);
 
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
@@ -35,6 +37,7 @@ public class ValorWorld extends World{
         placeTiles(TileType.BUSH, bush);
         placeTiles(TileType.CAVE, cave);
         placeTiles(TileType.KOULOU, koulou);
+        placeTiles(TileType.OBSTACLE, obstacle);
     }
 
     @Override
@@ -48,6 +51,17 @@ public class ValorWorld extends World{
                 placed++;
             }
         }
+    }
+
+    /**
+     * Attempt to remove an obstacle at the given position.
+     */
+    public boolean removeObstacle(int row, int col) {
+        Tile tile = getTile(row, col);
+        if (tile == null) {
+            return false;
+        }
+        return tile.removeObstacle();
     }
 
     @Override
@@ -67,7 +81,7 @@ public class ValorWorld extends World{
                 Tile tile = grid[r][c];
                 System.out.print(" | ");
 
-                if (tile.getType() == TileType.INACCESSIBLE) {
+                if (tile.getType() == TileType.INACCESSIBLE || tile.getType() == TileType.OBSTACLE) {
                     System.out.print("X X X | ");
                     continue;
                 }

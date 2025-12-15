@@ -28,7 +28,7 @@ public class Tile {
     }
 
     public boolean isAccessible() {
-        return type != TileType.INACCESSIBLE;
+        return (type != TileType.INACCESSIBLE && type != TileType.OBSTACLE);
     }
 
     public boolean isMarket() {
@@ -37,6 +37,10 @@ public class Tile {
 
     public boolean isCommon() {
         return type == TileType.COMMON;
+    }
+
+    public boolean isObstacle() {
+        return type == TileType.OBSTACLE;
     }
 
     public boolean hasParty() {
@@ -92,6 +96,18 @@ public class Tile {
     }
 
     /**
+     * Remove obstacle and convert to plain tile.
+     */
+    public boolean removeObstacle() {
+        if (type == TileType.OBSTACLE) {
+            type = TileType.PLAIN;
+            System.out.println("Obstacle removed! Tile is now passable.");
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Get display symbol for this tile.
      */
     public String getSymbol() {
@@ -122,6 +138,8 @@ public class Tile {
                 return "K";
             case PLAIN:
                 return "P";
+            case OBSTACLE:
+                return "O";
             case COMMON:
             default:
                 return ".";

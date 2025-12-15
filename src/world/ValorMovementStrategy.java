@@ -12,10 +12,6 @@ public class ValorMovementStrategy implements MovementStrategy {
         Tile newTile = world.getTile(newRow, newCol);
         if (newTile == null || !newTile.isAccessible() || newTile.hasHero()) return false;
 
-        // Cannot move into or through monster spaces - they block movement
-        if (newTile.hasMonster()) {
-            return false;
-        }
 
         Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
         int heroId = oldTile != null ? oldTile.getHeroId() : 0;
@@ -39,11 +35,12 @@ public class ValorMovementStrategy implements MovementStrategy {
             return false;
         }
 
-        // Check if moving into hero space - this triggers combat
-        if (newTile.hasHero()) {
-            // Combat will happen - return a special indicator
-            // For now, we just mark that combat should occur
-            return true; // Monster "moved" by initiating combat
+        // Check if tile is obstacle - monster will remove it instead of moving
+        if (newTile.isObstacle()) {
+            System.out.println(monster.getName() + " encounters an obstacle and begins clearing it...");
+            newTile.removeObstacle();
+            System.out.println(monster.getName() + " has cleared the obstacle!");
+            return true; // Return true - monster spent turn removing obstacle
         }
 
         // Normal movement - tile must be empty

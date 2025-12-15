@@ -96,6 +96,9 @@ public class LegendsOfValor extends RPG {
                         case 'r':
                             turnComplete = attemptRecall(hero, heroIdx);
                             break;
+                        case 'o':
+                            turnComplete = attemptRemoveObstacle(hero);
+                            break;
                         case 'i':
                             hero.displayStats();
                             break;
@@ -127,6 +130,7 @@ public class LegendsOfValor extends RPG {
         System.out.println("C - Cast spell");
         System.out.println("T - Teleport to another lane");
         System.out.println("R - Recall to Nexus");
+        System.out.println("O - Remove adjacent obstacle");
         System.out.println("I - Info");
         System.out.println("Q - Quit");
     }
@@ -419,6 +423,45 @@ public class LegendsOfValor extends RPG {
 
         System.out.println(hero.getName() + " teleported to (" + targetPos[0] + "," + targetPos[1] + ")!");
         return true; // Teleport consumes turn
+    }
+
+    /**
+     * Hero attempts to remove an adjacent obstacle.
+     * Uses 8-directional targeting (N, E, S, W, NE, SE, SW, NW).
+     * Consumes a turn.
+     */
+    private boolean attemptRemoveObstacle(Hero hero) {
+        System.out.println("\nSelect direction to remove obstacle:");
+        String dirInput = InputHelper.readString("Direction (N/E/S/W/NE/SE/SW/NW): ");
+        
+        int[] delta = parseDirection(dirInput);
+        if (delta == null) {
+            System.out.println("Invalid direction.");
+            return false;
+        }
+
+        int targetRow = hero.getRow() + delta[0];
+        int targetCol = hero.getCol() + delta[1];
+
+        // Validate target tile exists
+        Tile targetTile = world.getTile(targetRow, targetCol);
+        if (targetTile == null) {
+            System.out.println("Invalid location.");
+            return false;
+        }
+
+        // Check if it's an obstacle
+        if (!targetTile.isObstacle()) {
+            System.out.println("No obstacle in that direction.");
+            System.out.println("Obstacles are marked with [O] on the map.");
+            return false;
+        }
+
+        // Remove the obstacle
+        System.out.println(hero.getName() + " clears the obstacle!");
+        ((ValorWorld) world).removeObstacle(targetRow, targetCol);
+        
+        return true; // Consumes turn
     }
 
     private void placeHeroesAtBottomNexus() {
