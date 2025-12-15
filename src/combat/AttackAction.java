@@ -14,7 +14,6 @@ import java.util.Random;
  * Can be used by both heroes and monsters with terrain bonuses.
  */
 public class AttackAction implements CombatAction {
-    private static final double TERRAIN_BONUS = 0.10;
     private Random random;
     private World world;
 

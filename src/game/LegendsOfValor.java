@@ -6,6 +6,7 @@ import data.GameDatabase;
 import items.Spell;
 import util.InputHelper;
 import world.Tile;
+import world.TileType;
 import world.ValorWorld;
 import combat.ValorBattleEngine;
 
@@ -66,10 +67,10 @@ public class LegendsOfValor extends RPG {
                 Hero hero = party.getHero(heroIdx);
 
                 System.out.println("\n--- H" + (heroIdx + 1) + " Turn (" + hero.getName() + ") ---");
-                displayControls();
 
                 boolean turnComplete = false;
                 while (!turnComplete && gameRunning) {
+                    displayControls(hero);
                     char cmd = Character.toLowerCase(InputHelper.readChar("Command: "));
                     switch (cmd) {
                         case 'w':
@@ -99,6 +100,10 @@ public class LegendsOfValor extends RPG {
                         case 'o':
                             turnComplete = attemptRemoveObstacle(hero);
                             break;
+                        case 'm':
+                            attemptMarket(hero);
+                            // Market doesn't consume turn
+                            break;
                         case 'i':
                             hero.displayStats();
                             break;
@@ -124,15 +129,48 @@ public class LegendsOfValor extends RPG {
         }
     }
 
-    private void displayControls() {
+    private void displayControls(Hero hero) {
         System.out.println("W/A/S/D - Move");
         System.out.println("F - Attack monster");
         System.out.println("C - Cast spell");
         System.out.println("T - Teleport to another lane");
         System.out.println("R - Recall to Nexus");
         System.out.println("O - Remove adjacent obstacle");
+        // Only show Market option if hero is at a Nexus
+        if (isHeroAtNexus(hero)) {
+            System.out.println("M - Market (buy/sell items)");
+        }
+        
         System.out.println("I - Info");
         System.out.println("Q - Quit");
+    }
+
+    /**
+     * Check if hero is currently at a Nexus tile.
+     */
+    private boolean isHeroAtNexus(Hero hero) {
+        Tile currentTile = world.getTile(hero.getRow(), hero.getCol());
+        return currentTile != null && currentTile.getType() == TileType.NEXUS;
+    }
+
+    /**
+     * Attempt to access the market.
+     * Only works if hero is at a Nexus tile.
+     */
+    private void attemptMarket(Hero hero) {
+        if (!isHeroAtNexus(hero)) {
+            System.out.println("You must be at a Nexus to access the market!");
+            System.out.println("Use [R] to Recall to your Nexus, or reach the enemy Nexus.");
+            return;
+        }
+
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  NEXUS MARKET");
+        System.out.println("  Welcome, " + hero.getName() + "!");
+        System.out.println("  Trading Post at the Nexus");
+        System.out.println("=".repeat(50));
+        
+        marketEngine.enterMarket(party);
     }
 
     private boolean attemptMove(Hero hero, int dr, int dc) {
