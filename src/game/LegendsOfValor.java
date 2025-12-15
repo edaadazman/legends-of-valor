@@ -6,6 +6,7 @@ import data.GameDatabase;
 import util.InputHelper;
 import world.Tile;
 import world.ValorWorld;
+import combat.ValorBattleEngine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Random;
  */
 public class LegendsOfValor extends RPG {
     private ValorWorld world;
+    private ValorBattleEngine battleEngine;
     private final List<Monster> monsters;
     private final Random random;
 
@@ -43,6 +45,8 @@ public class LegendsOfValor extends RPG {
         displayWelcome();
         setupParty();
         world = new ValorWorld();
+        battleEngine = new ValorBattleEngine(world, party, monsters);
+
         placeHeroesAtBottomNexus();
         placeMonstersAtTopNexus();
 
@@ -80,9 +84,10 @@ public class LegendsOfValor extends RPG {
                             turnComplete = attemptMove(hero, 0, 1);
                             break;
                         case 't':
-                            // Attack - ask for direction
-                            char attackDir = Character.toLowerCase(InputHelper.readChar("Attack direction (W/A/S/D): "));
-                            turnComplete = attemptAttack(hero, attackDir);
+                            turnComplete = attemptAttack(hero);
+                            break;
+                        case 'c':
+                            turnComplete = attemptCastSpell(hero);
                             break;
                         case 'i':
                             hero.displayStats();
@@ -111,7 +116,8 @@ public class LegendsOfValor extends RPG {
 
     private void displayControls() {
         System.out.println("W/A/S/D - Move");
-        System.out.println("T - Choose Direction Then Attack monster");
+        System.out.println("T - Attack monster (choose direction)");
+        System.out.println("C - Cast spell (choose direction)");
         System.out.println("I - Info");
         System.out.println("Q - Quit");
     }
@@ -173,22 +179,61 @@ public class LegendsOfValor extends RPG {
         return ok;
     }
 
-    /** Attack a monster in an adjacent space (up, down, left, right). */
-    private boolean attemptAttack(Hero hero, char direction) {
-        int targetRow = hero.getRow();
-        int targetCol = hero.getCol();
-
-        // Determine target based on direction
-        switch (direction) {
-            case 'w': targetRow--; break; // up
-            case 's': targetRow++; break; // down
-            case 'a': targetCol--; break; // left
-            case 'd': targetCol++; break; // right
+    /**
+     * Parse directional input (N, E, S, W, NE, SE, SW, NW) into row/col offsets.
+     * Returns int[2] with {deltaRow, deltaCol}, or null if invalid.
+     */
+    private int[] parseDirection(String input) {
+        String dir = input.trim().toUpperCase();
+        
+        switch (dir) {
+            case "N":
+                return new int[]{-1, 0};  // North (up)
+            case "E":
+                return new int[]{0, 1};   // East (right)
+            case "S":
+                return new int[]{1, 0};   // South (down)
+            case "W":
+                return new int[]{0, -1};  // West (left)
+            case "NE":
+                return new int[]{-1, 1};  // Northeast (up-right)
+            case "SE":
+                return new int[]{1, 1};   // Southeast (down-right)
+            case "SW":
+                return new int[]{1, -1};  // Southwest (down-left)
+            case "NW":
+                return new int[]{-1, -1}; // Northwest (up-left)
             default:
-                System.out.println("Invalid attack direction.");
-                return false;
+                return null;
+        }
+    }
+
+    /**
+     * Hero attacks a monster using unified combat system.
+     * Player selects target by 8-directional input (N, E, S, W, NE, SE, SW, NW).
+     */
+    private boolean attemptAttack(Hero hero) {
+        List<Monster> monstersInRange = battleEngine.getMonstersInRange(hero);
+        
+        if (monstersInRange.isEmpty()) {
+            System.out.println("No monsters in range to attack!");
+            System.out.println("Move adjacent to an enemy first.");
+            return false;
         }
 
+        // Get direction from player
+        String dirInput = InputHelper.readString("Attack direction (N/E/S/W/NE/SE/SW/NW): ");
+        
+        int[] delta = parseDirection(dirInput);
+        if (delta == null) {
+            System.out.println("Invalid attack direction.");
+            return false;
+        }
+
+        int targetRow = hero.getRow() + delta[0];
+        int targetCol = hero.getCol() + delta[1];
+
+        // Validate target tile
         Tile targetTile = world.getTile(targetRow, targetCol);
         if (targetTile == null || !targetTile.hasMonster()) {
             System.out.println("No monster in that direction.");
@@ -196,15 +241,76 @@ public class LegendsOfValor extends RPG {
         }
 
         Monster monster = targetTile.getMonster();
-        System.out.println(hero.getName() + " attacked " + monster.getName() + "!");
-        System.out.println("TODO: Implement combat system");
-        System.out.println("Monster was defeated!");
 
-        // Remove monster from board and list
-        targetTile.removeMonster();
-        monsters.remove(monster);
+        // Use unified combat system (AttackAction with terrain bonuses)
+        return battleEngine.heroAttack(hero, monster);
+    }
 
-        return true; // Attack consumes turn
+    /**
+     * Hero casts spell on a monster using unified combat system.
+     * Player selects spell, then target by 8-directional input (N, E, S, W, NE, SE, SW, NW).
+     */
+    private boolean attemptCastSpell(Hero hero) {
+        List<Monster> monstersInRange = battleEngine.getMonstersInRange(hero);
+        
+        if (monstersInRange.isEmpty()) {
+            System.out.println("No monsters in range to cast spells on!");
+            System.out.println("Move adjacent to an enemy first.");
+            return false;
+        }
+
+        // First, select spell
+        List<items.Spell> spells = hero.getInventory().getSpells();
+        if (spells.isEmpty()) {
+            System.out.println(hero.getName() + " has no spells!");
+            return false;
+        }
+
+        System.out.println("\nAvailable Spells:");
+        for (int i = 0; i < spells.size(); i++) {
+            items.Spell s = spells.get(i);
+            System.out.println((i + 1) + ") " + s.getName() + " | Damage: " + s.getDamage() +
+                    " | Mana: " + s.getManaCost() + " | Type: " + s.getSpellType());
+        }
+        System.out.println("0) Cancel");
+
+        int spellChoice = InputHelper.readInt("Choose spell: ", 0, spells.size());
+        if (spellChoice == 0) {
+            return false;
+        }
+
+        items.Spell spell = spells.get(spellChoice - 1);
+
+        // Check mana before asking for direction
+        if (hero.getMana() < spell.getManaCost()) {
+            System.out.println("Insufficient mana! Need " + spell.getManaCost() + 
+                " MP, have " + hero.getMana() + " MP.");
+            return false;
+        }
+
+        // Then get direction for target
+        String dirInput = InputHelper.readString("Target direction (N/E/S/W/NE/SE/SW/NW): ");
+        
+        int[] delta = parseDirection(dirInput);
+        if (delta == null) {
+            System.out.println("Invalid target direction.");
+            return false;
+        }
+
+        int targetRow = hero.getRow() + delta[0];
+        int targetCol = hero.getCol() + delta[1];
+
+        // Validate target tile
+        Tile targetTile = world.getTile(targetRow, targetCol);
+        if (targetTile == null || !targetTile.hasMonster()) {
+            System.out.println("No monster in that direction.");
+            return false;
+        }
+
+        Monster monster = targetTile.getMonster();
+
+        // Use unified combat system (SpellAction with terrain bonuses)
+        return battleEngine.heroCastSpell(hero, spell, monster);
     }
 
     private void placeHeroesAtBottomNexus() {
@@ -237,7 +343,7 @@ public class LegendsOfValor extends RPG {
         GameDatabase db = GameDatabase.getInstance();
         
         // One monster per lane (cols 0/3/6 are lane anchors)
-        int[] laneCols = { 0, 3, 6 };
+        int[] laneCols = { 1, 4, 7 };
         int row = 0; // top Nexus row
 
         for (int i = 0; i < 3; i++) {
@@ -273,59 +379,19 @@ public class LegendsOfValor extends RPG {
         }
     }
 
-    /** Move all monsters down one row each turn and print their moves. */
+    /**
+     * Move all monsters using unified combat system.
+     */
     private void moveMonsters() {
         System.out.println("\n--- Monster Turn ---");
         
-        List<Monster> toRemove = new ArrayList<>();
-        
-        for (int i = 0; i < monsters.size(); i++) {
-            Monster monster = monsters.get(i);
-            int oldRow = monster.getRow();
-            int oldCol = monster.getCol();
-            
-            // Check if there's a hero in the next space (combat trigger)
-            Tile nextTile = world.getTile(oldRow + 1, oldCol);
-            if (nextTile != null && nextTile.hasHero()) {
-                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") engaged " + nextTile.getHero().getName() + " in combat!");
-                System.out.println("TODO: Implement combat system");
-                System.out.println("Monster was defeated!");
-                
-                // Remove monster from board
-                Tile monsterTile = world.getTile(oldRow, oldCol);
-                if (monsterTile != null) {
-                    monsterTile.removeMonster();
-                }
-                toRemove.add(monster);
+        for (Monster monster : new ArrayList<>(monsters)) {
+            if (monster.isFainted()) {
                 continue;
             }
-            
-            // Check if there's a hero directly adjacent (one space ahead) blocking movement
-            if (nextTile != null && nextTile.hasHero()) {
-                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") cannot move past hero in lane");
-                continue;
-            }
-            
-            boolean moved = world.moveMonster(monster);
-            
-            if (moved) {
-                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") moved from (" + oldRow + "," + oldCol + ") to (" + monster.getRow() + "," + monster.getCol() + ")");
-                
-                // Check if monster reached the bottom nexus (last row)
-                if (monster.getRow() == world.getSize() - 1) {
-                    world.display();
-                    System.out.println("\n" + "=".repeat(50));
-                    System.out.println("DEFEAT! " + monster.getName() + " has reached your nexus!");
-                    System.out.println("The monsters have won the battle!");
-                    System.out.println("=".repeat(50) + "\n");
-                    System.exit(0);
-                }
-            } else {
-                System.out.println("M" + (i + 1) + " (" + monster.getName() + ") could not move (blocked)");
-            }
+
+            // Use battle engine for monster actions (attack or move using unified combat)
+            battleEngine.executeMonsterTurn(monster);
         }
-        
-        // Remove defeated monsters from the list
-        monsters.removeAll(toRemove);
     }
 }

@@ -5,20 +5,20 @@ import characters.Party;
 import data.GameDatabase;
 import util.InputHelper;
 import java.util.List;
+import combat.BattleEngine;
+import world.World;
 
 /**
  * Abstract RPG game with common RPG mechanics.
  */
 public abstract class RPG extends Game {
     protected GameDatabase database;
-    protected BattleEngine battleEngine;
     protected MarketEngine marketEngine;
     protected Party party;
 
     public RPG() {
         super();
         this.database = GameDatabase.getInstance();
-        this.battleEngine = new BattleEngine();
         this.marketEngine = new MarketEngine();
     }
 

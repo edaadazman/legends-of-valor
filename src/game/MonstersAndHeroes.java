@@ -1,6 +1,7 @@
 package game;
 
 import characters.Hero;
+import combat.MHBattleEngine;
 import items.*;
 import util.InputHelper;
 import world.*;
@@ -13,7 +14,8 @@ import java.util.Random;
 public class MonstersAndHeroes extends RPG {
     private static final double BATTLE_CHANCE = 0.2;
     
-    private World world;
+    private MHBattleEngine battleEngine;
+    private MHWorld world;
     private Random random;
 
     public MonstersAndHeroes() {
@@ -41,6 +43,7 @@ public class MonstersAndHeroes extends RPG {
         displayWelcome();
         setupParty();
         world = new MHWorld();
+        battleEngine = new MHBattleEngine(world, party);
 
         System.out.println("\nYour epic journey begins!");
         System.out.println("May fortune favor the bold...\n");
