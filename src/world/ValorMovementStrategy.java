@@ -16,6 +16,22 @@ public class ValorMovementStrategy implements MovementStrategy {
         Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
         int heroId = oldTile != null ? oldTile.getHeroId() : 0;
 
+        // If moving forward (north), check if there's a monster in the CURRENT row blocking the lane
+        if (dr == -1) { // Moving north (towards enemy nexus)
+            int laneIndex = hero.getCol() / 3;
+            int col1 = laneIndex * 3;
+            int col2 = laneIndex * 3 + 1;
+            
+            // Check both columns of current lane at CURRENT row
+            Tile tile1 = world.getTile(hero.getRow(), col1);
+            Tile tile2 = world.getTile(hero.getRow(), col2);
+            
+            if ((tile1 != null && tile1.hasMonster()) || (tile2 != null && tile2.hasMonster())) {
+                System.out.println("Cannot move past monster in your lane! Defeat it first.");
+                return false;
+            }
+        }
+
         if (oldTile != null) {
             oldTile.removeHero();
         }
@@ -43,8 +59,22 @@ public class ValorMovementStrategy implements MovementStrategy {
             return true; // Return true - monster spent turn removing obstacle
         }
 
-        // Normal movement - tile must be empty
-        if (newTile.hasMonster()) {
+        // Cannot move into hero or monster spaces
+        if (newTile.hasHero() || newTile.hasMonster()) {
+            return false;
+        }
+
+        // If moving forward (south), check if there's a hero in the CURRENT row blocking the lane
+        int laneIndex = col / 3;
+        int col1 = laneIndex * 3;
+        int col2 = laneIndex * 3 + 1;
+        
+        // Check both columns of current lane at CURRENT row
+        Tile tile1 = world.getTile(monster.getRow(), col1);
+        Tile tile2 = world.getTile(monster.getRow(), col2);
+        
+        if ((tile1 != null && tile1.hasHero()) || (tile2 != null && tile2.hasHero())) {
+            // Monster is blocked by hero in current row
             return false;
         }
 
