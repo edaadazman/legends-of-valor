@@ -10,19 +10,16 @@ public class ValorMovementStrategy implements MovementStrategy {
         int newCol = hero.getCol() + dc;
 
         Tile newTile = world.getTile(newRow, newCol);
-        if (newTile == null || !newTile.isAccessible() || newTile.hasHero()) return false;
-
-
-        Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
-        int heroId = oldTile != null ? oldTile.getHeroId() : 0;
+        if (newTile == null || !newTile.isAccessible() || newTile.hasHero()) {
+            return false;
+        }
 
         // If moving forward (north), check if there's a monster in the CURRENT row blocking the lane
-        if (dr == -1) { // Moving north (towards enemy nexus)
+        if (dr == -1) {
             int laneIndex = hero.getCol() / 3;
             int col1 = laneIndex * 3;
             int col2 = laneIndex * 3 + 1;
             
-            // Check both columns of current lane at CURRENT row
             Tile tile1 = world.getTile(hero.getRow(), col1);
             Tile tile2 = world.getTile(hero.getRow(), col2);
             
@@ -32,11 +29,20 @@ public class ValorMovementStrategy implements MovementStrategy {
             }
         }
 
+        // Remove hero from old tile
+        Tile oldTile = world.getTile(hero.getRow(), hero.getCol());
+        int heroId = oldTile != null ? oldTile.getHeroId() : 0;
+
         if (oldTile != null) {
             oldTile.removeHero();
         }
+
+        // Place hero at new tile
         newTile.setHero(hero, heroId);
         hero.setPosition(newRow, newCol);
+
+        // Apply terrain buff for new tile
+        hero.applyTerrainBuff(newTile.getType());
 
         return true;
     }
@@ -48,15 +54,14 @@ public class ValorMovementStrategy implements MovementStrategy {
 
         Tile newTile = world.getTile(newRow, col);
         if (newTile == null || !newTile.isAccessible()) {
-            return false;
-        }
+            // Check if tile is obstacle - monster will remove it instead of moving
+            if (newTile.isObstacle()) {
+                System.out.println(monster.getName() + " encounters an obstacle and begins clearing it...");
+                newTile.removeObstacle();
+                return true;
+            }
 
-        // Check if tile is obstacle - monster will remove it instead of moving
-        if (newTile.isObstacle()) {
-            System.out.println(monster.getName() + " encounters an obstacle and begins clearing it...");
-            newTile.removeObstacle();
-            System.out.println(monster.getName() + " has cleared the obstacle!");
-            return true; // Return true - monster spent turn removing obstacle
+            return false;
         }
 
         // Cannot move into hero or monster spaces
@@ -69,12 +74,10 @@ public class ValorMovementStrategy implements MovementStrategy {
         int col1 = laneIndex * 3;
         int col2 = laneIndex * 3 + 1;
         
-        // Check both columns of current lane at CURRENT row
         Tile tile1 = world.getTile(monster.getRow(), col1);
         Tile tile2 = world.getTile(monster.getRow(), col2);
         
         if ((tile1 != null && tile1.hasHero()) || (tile2 != null && tile2.hasHero())) {
-            // Monster is blocked by hero in current row
             return false;
         }
 

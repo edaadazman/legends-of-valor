@@ -110,8 +110,8 @@ public class LegendsOfValor extends RPG {
                             break;
                     }
                 }
-                // Display world after each hero's turn
-                if (gameRunning && turnComplete) {
+                // Display world after each hero's turn except last
+                if (gameRunning && turnComplete && heroIdx < heroesToPlay - 1) {
                     System.out.println(); // Add blank line for readability
                     world.display();
                 }
@@ -344,6 +344,9 @@ public class LegendsOfValor extends RPG {
         spawnTile.setHero(hero, heroIdx + 1);
         hero.setPosition(spawnRow, spawnCol);
 
+        // Apply terrain buff for nexus tile
+        hero.applyTerrainBuff(spawnTile.getType());
+
         System.out.println(hero.getName() + " recalled to their nexus at (" + spawnRow + "," + spawnCol + ")!");
         return true; // Recall consumes turn
     }
@@ -421,6 +424,9 @@ public class LegendsOfValor extends RPG {
         targetTile.setHero(hero, heroIdx + 1);
         hero.setPosition(targetPos[0], targetPos[1]);
 
+        // Apply terrain buff for new tile
+        hero.applyTerrainBuff(targetTile.getType());
+
         System.out.println(hero.getName() + " teleported to (" + targetPos[0] + "," + targetPos[1] + ")!");
         return true; // Teleport consumes turn
     }
@@ -487,6 +493,9 @@ public class LegendsOfValor extends RPG {
             tile.setHero(hero, i + 1);
             hero.setPosition(row, col);
             hero.setSpawnLocation(row, col, i); // Track spawn location for recall
+
+            // Apply initial terrain buff (Nexus has no buff)
+            hero.applyTerrainBuff(tile.getType());
         }
     }
 

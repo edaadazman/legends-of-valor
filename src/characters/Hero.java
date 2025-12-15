@@ -1,14 +1,21 @@
 package characters;
 
 import items.*;
+import world.TileType;
 
 /**
  * Class for a Hero character in the game.
  */
 public class Hero extends Character {
+
+    private static final double TERRAIN_BONUS = 0.10;
+
     private HeroType heroType;
     private int mana;
     private int maxMana;
+    private int baseStrength;
+    private int baseDexterity;
+    private int baseAgility;
     private int strength;
     private int dexterity;
     private int agility;
@@ -23,12 +30,18 @@ public class Hero extends Character {
     private int spawnCol;
     private int laneIndex;
 
+    // Current terrain buff
+    private TileType currentTerrain;
+
     public Hero(String name, int level, HeroType heroType, int mana,
             int strength, int dexterity, int agility, int gold) {
         super(name, level, level * 100);
         this.heroType = heroType;
         this.mana = mana;
         this.maxMana = mana;
+        this.baseStrength = strength;
+        this.baseDexterity = dexterity;
+        this.baseAgility = agility;
         this.strength = strength;
         this.dexterity = dexterity;
         this.agility = agility;
@@ -40,6 +53,59 @@ public class Hero extends Character {
         this.spawnRow = -1;
         this.spawnCol = -1;
         this.laneIndex = -1;
+        this.currentTerrain = TileType.PLAIN;
+    }
+
+    /**
+     * Apply terrain buff when hero enters a tile.
+     */
+    public void applyTerrainBuff(TileType terrain) {
+        // Remove old buff first
+        removeTerrainBuff();
+        
+        this.currentTerrain = terrain;
+        
+        switch (terrain) {
+            case BUSH:
+                // + dexterity
+                this.dexterity = (int) (baseDexterity * (1 + TERRAIN_BONUS));
+                System.out.println(name + " feels more nimble in the bushes! Dexterity increased.");
+                break;
+            case CAVE:
+                // + agility
+                this.agility = (int) (baseAgility * (1 + TERRAIN_BONUS));
+                System.out.println(name + " feels more agile in the cave! Agility increased.");
+                break;
+            case KOULOU:
+                // + strength
+                this.strength = (int) (baseStrength * (1 + TERRAIN_BONUS));
+                System.out.println(name + " feels stronger on the koulou! Strength increased.");
+                break;
+            default:
+                // Plain or other tiles - no buff
+                break;
+        }
+    }
+
+    /**
+     * Remove terrain buff when hero leaves a tile.
+     */
+    public void removeTerrainBuff() {
+        if (currentTerrain != TileType.PLAIN && currentTerrain != TileType.NEXUS) {
+            this.strength = baseStrength;
+            this.dexterity = baseDexterity;
+            this.agility = baseAgility;
+        }
+        this.currentTerrain = TileType.PLAIN;
+    }
+
+    /**
+     * Update base stats when leveling up or using items.
+     */
+    private void updateBaseStats() {
+        this.baseStrength = strength;
+        this.baseDexterity = dexterity;
+        this.baseAgility = agility;
     }
 
     public HeroType getHeroType() {
@@ -59,7 +125,9 @@ public class Hero extends Character {
     }
 
     public void setStrength(int strength) {
+        this.baseStrength = strength;
         this.strength = strength;
+        applyTerrainBuff(currentTerrain); // Re-apply terrain buff
     }
 
     public int getDexterity() {
@@ -67,7 +135,9 @@ public class Hero extends Character {
     }
 
     public void setDexterity(int dexterity) {
+        this.baseDexterity = dexterity;
         this.dexterity = dexterity;
+        applyTerrainBuff(currentTerrain); // Re-apply terrain buff
     }
 
     public int getAgility() {
@@ -75,7 +145,9 @@ public class Hero extends Character {
     }
 
     public void setAgility(int agility) {
+        this.baseAgility = agility;
         this.agility = agility;
+        applyTerrainBuff(currentTerrain); // Re-apply terrain buff
     }
 
     public int getGold() {
@@ -155,7 +227,7 @@ public class Hero extends Character {
      * Calculate the hero's dodge chance based on agility.
      */
     public double getDodgeChance() {
-        return agility * 0.0002; // Reduced from 0.002 to balance gameplay
+        return agility * 0.0002;
     }
 
     /**
@@ -218,6 +290,10 @@ public class Hero extends Character {
         return maxMana;
     }
 
+    public TileType getCurrentTerrain() {
+        return currentTerrain;
+    }
+
     /**
      * Check if hero has enough experience to level up.
      */
@@ -241,24 +317,28 @@ public class Hero extends Character {
         this.maxMana = (int) (maxMana * 1.1);
         this.mana = this.maxMana;
 
-        strength = (int) (strength * 1.05);
-        dexterity = (int) (dexterity * 1.05);
-        agility = (int) (agility * 1.05);
+        // Update base stats
+        baseStrength = (int) (baseStrength * 1.05);
+        baseDexterity = (int) (baseDexterity * 1.05);
+        baseAgility = (int) (baseAgility * 1.05);
 
         switch (heroType) {
             case WARRIOR:
-                strength = (int) (strength * 1.05);
-                agility = (int) (agility * 1.05);
+                baseStrength = (int) (baseStrength * 1.05);
+                baseAgility = (int) (baseAgility * 1.05);
                 break;
             case SORCERER:
-                dexterity = (int) (dexterity * 1.05);
-                agility = (int) (agility * 1.05);
+                baseDexterity = (int) (baseDexterity * 1.05);
+                baseAgility = (int) (baseAgility * 1.05);
                 break;
             case PALADIN:
-                strength = (int) (strength * 1.05);
-                dexterity = (int) (dexterity * 1.05);
+                baseStrength = (int) (baseStrength * 1.05);
+                baseDexterity = (int) (baseDexterity * 1.05);
                 break;
         }
+
+        // Re-apply terrain buff with new base stats
+        applyTerrainBuff(currentTerrain);
 
         System.out.println("\n" + name + " has reached level " + level + "!");
         System.out.println("Stats have increased! You feel more powerful...");
@@ -270,10 +350,25 @@ public class Hero extends Character {
         System.out.println("Type: " + heroType);
         System.out.println("Level: " + level + " | XP: " + experience + "/" + (level * 10));
         System.out.println("HP: " + hp + "/" + maxHp + " | MP: " + mana + "/" + maxMana);
-        System.out.println("Strength: " + strength + " | Dexterity: " + dexterity + " | Agility: " + agility);
+        
+        // Show base stats and current (buffed) stats
+        String strDisplay = strength != baseStrength ? 
+            baseStrength + " → " + strength + " ↑" : String.valueOf(strength);
+        String dexDisplay = dexterity != baseDexterity ? 
+            baseDexterity + " → " + dexterity + " ↑" : String.valueOf(dexterity);
+        String agiDisplay = agility != baseAgility ? 
+            baseAgility + " → " + agility + " ↑" : String.valueOf(agility);
+        
+        System.out.println("Strength: " + strDisplay + 
+                         " | Dexterity: " + dexDisplay + 
+                         " | Agility: " + agiDisplay);
         System.out.println("Gold: " + gold);
         System.out.println("Weapon: " + (equippedWeapon != null ? equippedWeapon.getName() : "None"));
         System.out.println("Armor: " + (equippedArmor != null ? equippedArmor.getName() : "None"));
+        
+        if (currentTerrain != TileType.PLAIN && currentTerrain != TileType.NEXUS) {
+            System.out.println("Terrain: " + currentTerrain + " (Active Buff!)");
+        }
     }
 
     @Override

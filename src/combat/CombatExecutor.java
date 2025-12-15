@@ -190,8 +190,8 @@ public class CombatExecutor {
             }
         }
 
-        // Revive hero (clears fainted flag and sets HP/MP to half)
-        hero.revive();
+        // Respawn hero
+        hero.respawnAtNexus();
 
         // Get hero's lane and respawn at bottom nexus
         int laneIndex = hero.getLaneIndex();
@@ -205,8 +205,15 @@ public class CombatExecutor {
             if (nexusTile != null && nexusTile.isAccessible()) {
                 nexusTile.setHero(hero, laneIndex + 1);
                 hero.setPosition(respawnRow, respawnCol);
+
+                // Apply terrain buff for nexus tile
+                hero.applyTerrainBuff(nexusTile.getType());
+
                 System.out.println(hero.getName() + " respawned at Lane " + (laneIndex + 1) + 
-                    " Nexus with 50% HP/MP.");
+                    " Nexus with full HP/MP.");
+                System.out.println("HP: " + hero.getHp() + "/" + hero.getMaxHp() + 
+                    " | MP: " + hero.getMana() + "/" + hero.getMaxMana() + 
+                    " | Gold: " + hero.getGold());
             } else {
                 System.out.println("ERROR: Could not respawn " + hero.getName() + 
                     " - nexus tile not available!");
