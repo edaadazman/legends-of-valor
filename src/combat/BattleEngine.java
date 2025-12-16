@@ -70,9 +70,6 @@ public abstract class BattleEngine {
             return false;
         }
 
-        // Deduct mana cost
-        hero.setMana(hero.getMana() - spell.getManaCost());
-
         return combatExecutor.executeSpell(hero, target, spell);
     }
 

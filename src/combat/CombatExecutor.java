@@ -114,7 +114,19 @@ public class CombatExecutor {
      * Handle monster defeat - give rewards to ALL living heroes.
      */
     private void handleMonsterDefeat(Character attacker, Monster monster) {
-        System.out.println(monster.getName() + " has been defeated!");
+        
+        // Get monster ID for display
+        String monsterId = "";
+        if (world != null) {
+            Tile tile = world.getTile(monster.getRow(), monster.getCol());
+            if (tile != null) {
+                int id = tile.getMonsterId();
+                monsterId = id > 0 ? "M" + id + ": " : "";
+            }
+        }
+        
+        System.out.println(monsterId + monster.getName() + " has been slain!");
+
 
         // Award gold and experience to ALL living heroes
         int goldReward = monster.getLevel() * 100;

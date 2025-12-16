@@ -46,6 +46,8 @@ public class SpellAction implements CombatAction {
             return false;
         }
 
+        hero.setMana(hero.getMana() - spell.getManaCost());
+
         // Check dodge
         double dodgeChance = defender instanceof Monster ? 
             ((Monster) defender).getDodgeChance() : 0.0;
@@ -73,11 +75,6 @@ public class SpellAction implements CombatAction {
 
         // Remove spell from inventory
         hero.getInventory().removeItem(spell);
-
-        // Check if defender was defeated
-        if (defender.isFainted()) {
-            System.out.println(defenderId + ": " + defender.getName() + " has been slain!");
-        }
 
         return true;
     }
