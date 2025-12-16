@@ -13,7 +13,7 @@ import java.util.Random;
  */
 public class MonstersAndHeroes extends RPG {
     private static final double BATTLE_CHANCE = 0.2;
-    
+
     private MHBattleEngine battleEngine;
     private MHWorld world;
     private Random random;
@@ -78,7 +78,7 @@ public class MonstersAndHeroes extends RPG {
 
     private void handleInput() {
         char input = InputHelper.readChar("Enter command: ");
-    
+
         switch (Character.toLowerCase(input)) {
             case 'w':
                 moveParty(-1, 0);
@@ -135,7 +135,7 @@ public class MonstersAndHeroes extends RPG {
             // Use inherited manageInventory method
             // In M&H, inventory actions don't consume turns
             manageInventory(hero);
-            
+
             // Ask if they want to continue managing inventory
             String continueChoice = InputHelper.readString("\nContinue managing inventory? (y/n): ");
             if (!continueChoice.equalsIgnoreCase("y")) {
@@ -159,7 +159,7 @@ public class MonstersAndHeroes extends RPG {
         } else if (currentTile.isCommon()) {
             if (random.nextDouble() < BATTLE_CHANCE) {
                 boolean won = battleEngine.startBattle(party);
-                if (!won) {
+                if (!won || battleEngine.isQuitRequested()) {
                     gameRunning = false;
                 }
             } else {

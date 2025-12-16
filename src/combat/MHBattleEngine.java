@@ -17,8 +17,17 @@ import java.util.List;
  */
 public class MHBattleEngine extends BattleEngine {
 
+    private boolean quitRequested = false;
+
     public MHBattleEngine(World world, Party party) {
         super(world, party, new ArrayList<>());
+    }
+
+    /**
+     * Check if quit was requested during battle.
+     */
+    public boolean isQuitRequested() {
+        return quitRequested;
     }
 
     /**
@@ -28,14 +37,19 @@ public class MHBattleEngine extends BattleEngine {
         this.party = party;
         this.monsters = MonsterFactory.createMonsterGroup(party.size(), party.getHighestLevel());
         this.combatExecutor = new CombatExecutor(null, party, monsters);
+        this.quitRequested = false;
 
         System.out.println("\n=== BATTLE COMMENCES! ===");
         System.out.println("Monsters emerge from the shadows to challenge your party!\n");
         displayBattleStatus();
 
-        while (!isBattleOver()) {
+        while (!isBattleOver() && !quitRequested) {
             executeHeroTurn();
-            
+
+            if (quitRequested) {
+                return false;
+            }
+
             if (monsters.isEmpty()) {
                 handleVictory();
                 return true;
@@ -57,7 +71,7 @@ public class MHBattleEngine extends BattleEngine {
             displayBattleStatus();
         }
 
-        return !party.allFainted();
+        return !party.allFainted() && !quitRequested;
     }
 
     /**
@@ -65,7 +79,7 @@ public class MHBattleEngine extends BattleEngine {
      */
     private void executeHeroTurn() {
         for (Hero hero : party.getHeroes()) {
-            if (hero.isFainted()) {
+            if (hero.isFainted() || quitRequested) {
                 continue;
             }
 
@@ -74,10 +88,23 @@ public class MHBattleEngine extends BattleEngine {
             }
 
             boolean actionTaken = false;
-            while (!actionTaken) {
+            while (!actionTaken && !quitRequested) {
                 displayCombatMenu(hero);
-                int choice = InputHelper.readInt("", 1, 6);
-                actionTaken = processHeroAction(hero, choice);
+                System.out.println("Q) Quit Game");
+                char input = Character.toLowerCase(InputHelper.readChar("Choice: "));
+
+                if (input == 'q') {
+                    quitRequested = true;
+                    System.out.println("\nQuitting game...");
+                    return;
+                }
+
+                int choice = input - '0'; // Convert char to int
+                if (choice >= 1 && choice <= 6) {
+                    actionTaken = processHeroAction(hero, choice);
+                } else {
+                    System.out.println("Invalid choice. Enter 1-6 or Q to quit.");
+                }
 
                 if (monsters.isEmpty()) {
                     return;
@@ -159,8 +186,8 @@ public class MHBattleEngine extends BattleEngine {
         }
 
         if (hero.getMana() < spell.getManaCost()) {
-            System.out.println("Insufficient mana! Need " + spell.getManaCost() + 
-                " MP, have " + hero.getMana() + " MP.");
+            System.out.println("Insufficient mana! Need " + spell.getManaCost() +
+                    " MP, have " + hero.getMana() + " MP.");
             return false;
         }
 
@@ -179,14 +206,14 @@ public class MHBattleEngine extends BattleEngine {
         System.out.println("\n=== YOUR PARTY ===");
         for (Hero hero : party.getHeroes()) {
             String status = hero.isFainted() ? "FAINTED" : "FIGHTING";
-            System.out.println(hero.getName() + " | HP: " + hero.getHp() + 
-                " | MP: " + hero.getMana() + " | Status: " + status);
+            System.out.println(hero.getName() + " | HP: " + hero.getHp() +
+                    " | MP: " + hero.getMana() + " | Status: " + status);
         }
 
         System.out.println("\n=== ENEMIES ===");
         for (Monster monster : monsters) {
             System.out.println(monster.getName() + " | Level: " + monster.getLevel() +
-                " | HP: " + monster.getHp() + " | Damage: " + monster.getBaseDamage());
+                    " | HP: " + monster.getHp() + " | Damage: " + monster.getBaseDamage());
         }
     }
 
@@ -214,8 +241,8 @@ public class MHBattleEngine extends BattleEngine {
                 hero.addGold(goldGain);
                 hero.addExperience(expGain);
 
-                System.out.println(hero.getName() + " gained " + goldGain + 
-                    " gold and " + expGain + " experience.");
+                System.out.println(hero.getName() + " gained " + goldGain +
+                        " gold and " + expGain + " experience.");
             } else {
                 hero.revive();
             }
