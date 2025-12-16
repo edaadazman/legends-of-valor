@@ -88,9 +88,9 @@ public class GameFactory {
      * Display the game selection menu.
      */
     private static void displayGameMenu() {
-        System.out.println("\n" + "=".repeat(50));
+        System.out.println("\n" + "===========================================================");
         System.out.println("  SELECT GAME MODE");
-        System.out.println("=".repeat(50));
+        System.out.println("===========================================================");
         
         GameType[] types = GameType.values();
         for (int i = 0; i < types.length; i++) {
@@ -98,7 +98,7 @@ public class GameFactory {
             System.out.println("   " + types[i].getDescription());
         }
         System.out.println("0) Exit");
-        System.out.println("=".repeat(50));
+        System.out.println("===========================================================");
     }
     
     /**
