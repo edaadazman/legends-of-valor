@@ -729,7 +729,7 @@ public class LegendsOfValor extends RPG {
             int newRow = targetHero.getRow() + directions[i][0];
             int newCol = targetHero.getCol() + directions[i][1];
             Tile tile = world.getTile(newRow, newCol);
-            if (tile != null && tile.isAccessible() && !tile.hasHero() && !tile.hasMonster()) {
+            if (tile != null && tile.isAccessible() && !tile.hasHero()) {
                 validPositions.add(new int[]{newRow, newCol});
                 validNames.add(directionNames[i]);
             }
