@@ -73,27 +73,21 @@ public class GameDatabase {
 
         // Load heroes
         allHeroes = heroLoader.loadAllHeroes();
-        System.out.println("Loaded " + allHeroes.size() + " heroes");
 
         // Load monsters
         allMonsters = monsterLoader.loadAllMonsters();
-        System.out.println("Loaded " + allMonsters.size() + " monsters");
 
         // Load items
         weapons = weaponLoader.loadWeapons();
-        System.out.println("Loaded " + weapons.size() + " weapons");
 
         armors = armorLoader.loadArmor();
-        System.out.println("Loaded " + armors.size() + " armors");
 
         potions = potionLoader.loadPotions();
-        System.out.println("Loaded " + potions.size() + " potions");
 
         // Load spells
         fireSpells = spellLoader.loadFromFile("FireSpells.txt", SpellType.FIRE);
         iceSpells = spellLoader.loadFromFile("IceSpells.txt", SpellType.ICE);
         lightningSpells = spellLoader.loadFromFile("LightningSpells.txt", SpellType.LIGHTNING);
-        System.out.println("Loaded " + (fireSpells.size() + iceSpells.size() + lightningSpells.size()) + " spells");
 
         System.out.println("Game data loaded successfully!\n");
     }

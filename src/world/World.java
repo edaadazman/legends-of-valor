@@ -6,7 +6,7 @@ import characters.Monster;
 import java.util.Random;
 
 /**
- * Class for the game world as a grid of tiles.
+ * Abstract base Class for the game world as a grid of tiles.
  */
 public abstract class World {
 

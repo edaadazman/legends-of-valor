@@ -3,6 +3,10 @@ package world;
 import characters.Hero;
 import characters.Monster;
 
+/**
+ * Movement strategy for Monsters & Heroes.
+ * Party moves as one unit, monsters don't move.
+ */
 public class MHMovementStrategy implements MovementStrategy {
     @Override
     public boolean moveHero(Hero hero, int deltaRow, int deltaCol, World world) {

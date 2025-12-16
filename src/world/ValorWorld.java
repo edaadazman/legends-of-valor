@@ -1,5 +1,10 @@
 package world;
 
+/**
+ * Concrete world for Legends of Valor.
+ * 8x8 three-lane battlefield with Nexus zones, terrain types, and obstacles.
+ */
+
 public class ValorWorld extends World{
 
     private static final int DEFAULT_VALOR_WORLD_SIZE = 8;

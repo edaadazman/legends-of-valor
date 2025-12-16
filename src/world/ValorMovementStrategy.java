@@ -3,6 +3,11 @@ package world;
 import characters.Hero;
 import characters.Monster;
 
+/**
+ * Movement strategy for Legends of Valor.
+ * Heroes and monsters move individually with lane-based blocking rules.
+ */
+
 public class ValorMovementStrategy implements MovementStrategy {
     @Override
     public boolean moveHero(Hero hero, int dr, int dc, World world) {
@@ -39,16 +44,13 @@ public class ValorMovementStrategy implements MovementStrategy {
             }
         }
 
-        // Remove hero from old tile
         if (oldTile != null) {
             oldTile.removeHero();
         }
 
-        // Place hero at new tile
         newTile.setHero(hero, heroId);
         hero.setPosition(newRow, newCol);
 
-        // Apply terrain buff for new tile
         hero.applyTerrainBuff(newTile.getType());
 
         return true;

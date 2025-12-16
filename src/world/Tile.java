@@ -4,7 +4,8 @@ import characters.Hero;
 import characters.Monster;
 
 /**
- * Class for a single tile in the game world.
+ * Represents a single tile in the game world grid.
+ * Can hold terrain type, hero, monster, and party marker.
  */
 public class Tile {
     private TileType type;
