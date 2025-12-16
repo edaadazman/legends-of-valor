@@ -41,16 +41,16 @@ public class LegendsOfValor extends RPG {
      * Display difficulty selection menu.
      */
     private void selectDifficulty() {
-        System.out.println("\n" + "=".repeat(50));
+        System.out.println("\n" + "===========================================================");
         System.out.println("  SELECT DIFFICULTY");
-        System.out.println("=".repeat(50));
+        System.out.println("===========================================================");
         
         Difficulty[] difficulties = Difficulty.values();
         for (int i = 0; i < difficulties.length; i++) {
             System.out.println((i + 1) + ") " + difficulties[i].name() + 
                 " - " + difficulties[i].getDescription());
         }
-        System.out.println("=".repeat(50));
+        System.out.println("===========================================================");
 
         int choice = InputHelper.readInt("Choose difficulty (1-3): ", 1, difficulties.length);
         this.difficulty = difficulties[choice - 1];
@@ -84,9 +84,9 @@ public class LegendsOfValor extends RPG {
     protected void gameLoop() {
         while (gameRunning) {
             // Display round number at the start of each round
-            System.out.println("\n" + "=".repeat(70));
+            System.out.println("\n" + "===========================================================");
             System.out.println("  ROUND " + (roundCounter + 1));
-            System.out.println("=".repeat(70));
+            System.out.println("===========================================================");
 
             world.display();
 
@@ -197,9 +197,9 @@ public class LegendsOfValor extends RPG {
      * Display comprehensive battle information for all heroes and monsters.
      */
     private void displayBattleInfo() {
-        System.out.println("\n" + "=".repeat(70));
+        System.out.println("\n" + "===========================================================");
         System.out.println("  BATTLE STATUS");
-        System.out.println("=".repeat(70));
+        System.out.println("===========================================================");
 
         // Display all heroes
         System.out.println("\n=== YOUR HEROES ===");
@@ -223,16 +223,16 @@ public class LegendsOfValor extends RPG {
             }
         }
 
-        System.out.println("=".repeat(70));
+        System.out.println("===========================================================");
     }
 
     /**
      * Display comprehensive help screen with game instructions.
      */
     private void displayHelpScreen() {
-        System.out.println("\n" + "=".repeat(70));
+        System.out.println("\n" + "===========================================================================");
         System.out.println("                    LEGENDS OF VALOR - HOW TO PLAY");
-        System.out.println("=".repeat(70));
+        System.out.println("===========================================================================");
         
         System.out.println("\n OBJECTIVE:");
         System.out.println("  • Heroes: Reach the Monster Nexus (top row) to win");
@@ -304,9 +304,9 @@ public class LegendsOfValor extends RPG {
         System.out.println("  • Viewing inventory does NOT consume turn");
         System.out.println("  • Spells are single-use and removed after casting");
         
-        System.out.println("\n" + "=".repeat(70));
+        System.out.println("\n" + "===========================================================================");
         System.out.println("Press ENTER to return to game...");
-        System.out.println("=".repeat(70));
+        System.out.println("===========================================================================");
         
         InputHelper.readChar("");
     }
@@ -337,10 +337,10 @@ public class LegendsOfValor extends RPG {
      * Called based on diffculty setting.
      */
     private void spawnNewMonsters() {
-        System.out.println("\n" + "=".repeat(70));
+        System.out.println("\n" + "===========================================================================");
         System.out.println("    REINFORCEMENTS ARRIVING! ");
         System.out.println("  Enemy forces are spawning at the Monster Nexus!");
-        System.out.println("=".repeat(70));
+        System.out.println("===========================================================================");
 
         GameDatabase db = GameDatabase.getInstance();
         int highestHeroLevel = party.getHighestLevel();
@@ -461,11 +461,11 @@ public class LegendsOfValor extends RPG {
             return;
         }
 
-        System.out.println("\n" + "=".repeat(50));
+        System.out.println("\n" + "===========================================================================");
         System.out.println("  NEXUS MARKET");
         System.out.println("  Welcome, " + hero.getName() + "!");
         System.out.println("  Trading Post at the Nexus");
-        System.out.println("=".repeat(50));
+        System.out.println("===========================================================================");
         
         marketEngine.enterMarketForHero(hero);
     }
@@ -504,11 +504,11 @@ public class LegendsOfValor extends RPG {
             // Check if hero reached the top nexus (row 0)
             if (hero.getRow() == 0) {
                 world.display();
-                System.out.println("\n" + "=".repeat(50));
+                System.out.println("\n" + "===========================================================================");
                 System.out.println(" VICTORY! H" + heroId + ": " + hero.getName() + 
                     " has reached the enemy nexus!");
                 System.out.println("The heroes have won the battle!");
-                System.out.println("=".repeat(50) + "\n");
+                System.out.println("============================================================================\n");
                 gameRunning = false;
             }
         }

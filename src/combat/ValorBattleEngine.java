@@ -218,11 +218,11 @@ private void attemptMonsterCombat(Monster monster, int monsterId) {
             if (hero.isAlive() && hero.getRow() == 0) {
                 Tile tile = world.getTile(hero.getRow(), hero.getCol());
                 if (tile != null && tile.getType() == TileType.NEXUS) {
-                    System.out.println("\n" + "=".repeat(70));
+                    System.out.println("\n" + "===========================================================");
                     System.out.println("   VICTORY! ");
                     System.out.println("  " + hero.getName() + " has reached the Monster Nexus!");
                     System.out.println("  The heroes have won the battle!");
-                    System.out.println("=".repeat(70));
+                    System.out.println("===========================================================");
                     return true;
                 }
             }
@@ -240,11 +240,11 @@ private void attemptMonsterCombat(Monster monster, int monsterId) {
             if (monster.isAlive() && monster.getRow() == heroNexusRow) {
                 Tile tile = world.getTile(monster.getRow(), monster.getCol());
                 if (tile != null && tile.getType() == TileType.NEXUS) {
-                    System.out.println("\n" + "=".repeat(70));
+                    System.out.println("\n" + "===========================================================");
                     System.out.println("    DEFEAT! ");
                     System.out.println("  " + monster.getName() + " has reached the Hero Nexus!");
                     System.out.println("  The monsters have won. Game Over!");
-                    System.out.println("=".repeat(70));
+                    System.out.println("===========================================================");
                     return true;
                 }
             }
