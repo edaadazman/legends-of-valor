@@ -5,6 +5,7 @@ import characters.Monster;
 import data.GameDatabase;
 import items.Spell;
 import util.InputHelper;
+import util.AsciiArt;
 import world.Tile;
 import world.TileType;
 import world.ValorWorld;
@@ -33,10 +34,7 @@ public class LegendsOfValor extends RPG {
 
     @Override
     protected void displayWelcome() {
-        System.out.println("\n===========================================");
-        System.out.println("  LEGENDS OF VALOR");
-        System.out.println("  Three lanes await—defend your nexus!");
-        System.out.println("===========================================\n");
+        AsciiArt.displayLegendsOfValorIntro();
     }
 
     /**

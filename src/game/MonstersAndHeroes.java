@@ -3,6 +3,7 @@ package game;
 import characters.Hero;
 import combat.MHBattleEngine;
 import items.*;
+import util.AsciiArt;
 import util.InputHelper;
 import world.*;
 import java.util.List;
@@ -25,12 +26,7 @@ public class MonstersAndHeroes extends RPG {
 
     @Override
     protected void displayWelcome() {
-        System.out.println("\n===========================================");
-        System.out.println("  LEGENDS: MONSTERS AND HEROES");
-        System.out.println("  A Tale of Courage, Magic, and Glory");
-        System.out.println("===========================================");
-        System.out.println("\nThe realm is under siege by fearsome monsters...");
-        System.out.println("Brave heroes are needed to restore peace to the land!\n");
+        AsciiArt.displayMonstersAndHeroesIntro();
     }
 
     @Override
