@@ -22,11 +22,13 @@ public class LegendsOfValor extends RPG {
     private ValorBattleEngine battleEngine;
     private final List<Monster> monsters;
     private int roundCounter;
+    private Difficulty difficulty;
 
     public LegendsOfValor() {
         super();
         this.monsters = new ArrayList<>();
         this.roundCounter = 0;
+        this.difficulty = Difficulty.EASY;
     }
 
     @Override
@@ -37,6 +39,29 @@ public class LegendsOfValor extends RPG {
         System.out.println("===========================================\n");
     }
 
+    /**
+     * Display difficulty selection menu.
+     */
+    private void selectDifficulty() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  SELECT DIFFICULTY");
+        System.out.println("=".repeat(50));
+        
+        Difficulty[] difficulties = Difficulty.values();
+        for (int i = 0; i < difficulties.length; i++) {
+            System.out.println((i + 1) + ") " + difficulties[i].name() + 
+                " - " + difficulties[i].getDescription());
+        }
+        System.out.println("=".repeat(50));
+
+        int choice = InputHelper.readInt("Choose difficulty (1-3): ", 1, difficulties.length);
+        this.difficulty = difficulties[choice - 1];
+
+        System.out.println("\nDifficulty set to: " + difficulty.name());
+        System.out.println(difficulty.getDescription());
+        System.out.println();
+    }
+
     @Override
     protected int getRequiredHeroCount() {
         return 3; // Valor always uses exactly 3 heroes
@@ -45,6 +70,7 @@ public class LegendsOfValor extends RPG {
     @Override
     public void start() {
         displayWelcome();
+        selectDifficulty();;
         setupParty();
         world = new ValorWorld();
         battleEngine = new ValorBattleEngine(world, party, monsters);
@@ -126,6 +152,10 @@ public class LegendsOfValor extends RPG {
                             displayBattleInfo();
                             world.display();
                             break;
+                        case 'h':
+                            displayHelpScreen();
+                            world.display();
+                            break;
                         case 'p':
                             // Pass turn - hero does nothing
                             turnComplete = passTurn(hero);
@@ -158,7 +188,7 @@ public class LegendsOfValor extends RPG {
             // Increment round counter and check for monster spawning
             if (gameRunning) {
                 roundCounter++;
-                if (roundCounter % 8 == 0) {
+                if (roundCounter % difficulty.getSpawnInterval() == 0) {
                     spawnNewMonsters();
                 }
             }
@@ -198,6 +228,91 @@ public class LegendsOfValor extends RPG {
         System.out.println("=".repeat(70));
     }
 
+    /**
+     * Display comprehensive help screen with game instructions.
+     */
+    private void displayHelpScreen() {
+        System.out.println("\n" + "=".repeat(70));
+        System.out.println("                    LEGENDS OF VALOR - HOW TO PLAY");
+        System.out.println("=".repeat(70));
+        
+        System.out.println("\n OBJECTIVE:");
+        System.out.println("  • Heroes: Reach the Monster Nexus (top row) to win");
+        System.out.println("  • Monsters: Prevent heroes from reaching their Nexus");
+        System.out.println("  • If a monster reaches the Hero Nexus (bottom row), you lose!");
+        
+        System.out.println("\n MAP LAYOUT:");
+        System.out.println("  • 8x8 grid divided into 3 vertical lanes");
+        System.out.println("  • Columns 2 and 5 are inaccessible barriers (X)");
+        System.out.println("  • Row 0: Monster Nexus (N) - Hero victory condition");
+        System.out.println("  • Row 7: Hero Nexus (N) - Monster victory condition");
+        
+        System.out.println("\n CONTROLS:");
+        System.out.println("  W/A/S/D  - Move (North/West/South/East)");
+        System.out.println("  F        - Attack adjacent monster");
+        System.out.println("  C        - Cast spell on adjacent monster");
+        System.out.println("  T        - Teleport to another lane");
+        System.out.println("  R        - Recall to your spawn Nexus");
+        System.out.println("  O        - Remove adjacent obstacle");
+        System.out.println("  V        - Manage inventory (equip/use items)");
+        System.out.println("  M        - Market (only at Nexus tiles)");
+        System.out.println("  I        - Display battle information");
+        System.out.println("  H        - Help (this screen)");
+        System.out.println("  P        - Pass turn");
+        System.out.println("  Q        - Quit game");
+        
+        System.out.println("\n  TERRAIN TYPES:");
+        System.out.println("  N - Nexus       (Spawn zones, market access)");
+        System.out.println("  P - Plain       (No special effect)");
+        System.out.println("  B - Bush        (+10% Dexterity → better spell damage)");
+        System.out.println("  C - Cave        (+10% Agility → better dodge chance)");
+        System.out.println("  K - Koulou      (+10% Strength → better physical damage)");
+        System.out.println("  O - Obstacle    (Blocks movement, can be removed)");
+        System.out.println("  X - Inaccessible (Permanent lane barriers)");
+        
+        System.out.println("\n  COMBAT RULES:");
+        System.out.println("  • Heroes can only attack/cast spells on adjacent monsters (range 1)");
+        System.out.println("  • Heroes CANNOT move north past monsters in their lane");
+        System.out.println("  • Monsters move south automatically toward Hero Nexus");
+        System.out.println("  • Monsters CANNOT move past heroes in their lane");
+        System.out.println("  • Defeated heroes respawn at their Nexus with full HP/MP");
+        System.out.println("  • Defeated monsters are removed and drop gold/XP");
+        
+        System.out.println("\n STRATEGY TIPS:");
+        System.out.println("  • Use terrain strategically (Bush for spells, Cave for dodging)");
+        System.out.println("  • Teleport between lanes to support teammates");
+        System.out.println("  • Shop at Nexus tiles to buy better equipment");
+        System.out.println("  • Remove obstacles to create clear paths");
+        System.out.println("  • Balance offense (pushing forward) with defense (blocking monsters)");
+        System.out.println("  • Heroes recover 10% HP/MP at end of each round");
+        
+        System.out.println("\n  DIFFICULTY LEVELS:");
+        System.out.println("  • EASY:   Monsters spawn every 8 rounds");
+        System.out.println("  • MEDIUM: Monsters spawn every 6 rounds");
+        System.out.println("  • HARD:   Monsters spawn every 4 rounds");
+        System.out.println("  Current: " + difficulty.name() + " - Next spawn in " + 
+            (difficulty.getSpawnInterval() - (roundCounter % difficulty.getSpawnInterval())) + 
+            " rounds");
+        
+        System.out.println("\n MARKET ACCESS:");
+        System.out.println("  • Available only at Nexus tiles (N)");
+        System.out.println("  • Buy weapons, armor, potions, and spells");
+        System.out.println("  • Sell unwanted items for gold");
+        System.out.println("  • Check required levels before purchasing");
+        
+        System.out.println("\n INVENTORY MANAGEMENT:");
+        System.out.println("  • Equipping weapons/armor CONSUMES your turn");
+        System.out.println("  • Using potions CONSUMES your turn");
+        System.out.println("  • Viewing inventory does NOT consume turn");
+        System.out.println("  • Spells are single-use and removed after casting");
+        
+        System.out.println("\n" + "=".repeat(70));
+        System.out.println("Press ENTER to return to game...");
+        System.out.println("=".repeat(70));
+        
+        InputHelper.readChar("");
+    }
+
 
     private void displayControls(Hero hero) {
         System.out.println("W/A/S/D - Move");
@@ -213,6 +328,7 @@ public class LegendsOfValor extends RPG {
         }
         
         System.out.println("I - Info");
+        System.out.println("H - How To Play");
         System.out.println("P - Pass turn");
         System.out.println("Q - Quit");
     }
@@ -220,7 +336,7 @@ public class LegendsOfValor extends RPG {
     /**
      * Spawn 3 new monsters (one per lane) at the top nexus.
      * Monsters are leveled to match the highest level hero.
-     * Called every 8 rounds.
+     * Called based on diffculty setting.
      */
     private void spawnNewMonsters() {
         System.out.println("\n" + "=".repeat(70));
@@ -516,8 +632,7 @@ public class LegendsOfValor extends RPG {
         System.out.println("\n=== Monsters in Range ===");
         for (int i = 0; i < monstersInRange.size(); i++) {
             Monster m = monstersInRange.get(i);
-            
-            // Get monster ID from tile
+
             Tile tile = world.getTile(m.getRow(), m.getCol());
             int monsterId = tile != null ? tile.getMonsterId() : 0;
             
@@ -544,13 +659,11 @@ public class LegendsOfValor extends RPG {
         int spawnRow = hero.getSpawnRow();
         int spawnCol = hero.getSpawnCol();
 
-        // Check if hero is already at their nexus
         if (currentRow == spawnRow && currentCol == spawnCol) {
             System.out.println(hero.getName() + " is already at their nexus.");
             return false;
         }
 
-        // Check if spawn nexus is occupied
         Tile spawnTile = world.getTile(spawnRow, spawnCol);
         if (spawnTile == null) {
             System.out.println("Cannot recall: spawn location is invalid.");
@@ -562,7 +675,6 @@ public class LegendsOfValor extends RPG {
             return false;
         }
 
-        // Remove hero from current tile
         Tile currentTile = world.getTile(currentRow, currentCol);
         if (currentTile != null) {
             currentTile.removeHero();
@@ -572,7 +684,6 @@ public class LegendsOfValor extends RPG {
         spawnTile.setHero(hero, heroIdx + 1);
         hero.setPosition(spawnRow, spawnCol);
 
-        // Apply terrain buff for nexus tile
         hero.applyTerrainBuff(spawnTile.getType());
 
         System.out.println(hero.getName() + " recalled to their nexus at (" + spawnRow + "," + spawnCol + ")!");
